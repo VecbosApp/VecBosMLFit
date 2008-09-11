@@ -1,0 +1,38 @@
+--- VecBos fit setup of the code ---
+
+1) setup the MLFit core code:
+
+setenv CVSROOT :ext:isscvs.cern.ch:/local/reps/StaTTooLLHC
+setenv CVS_RSH ssh
+cvs co MLFit
+
+2) set up ROOT
+
+3) compile MLFit
+cd MLFit
+make
+cd ..
+
+4) setup VecBos MLFit code
+project CMSSW
+cvs co -d VecBosMLFit UserCode/emanuele/VecBosMLFit
+
+5) go in the MLFit workdir and copy the datasets
+cd VecBosMLFit
+cp <yourdatasets*>.root datasets
+
+
+--- some macros ---
+this is the analysis. This varies with time
+
+* parameterize the Z+jets:
+> root -l src/RooLogon.C
+> .L src/FitZElectrons.cc
+> FitZElectrons(1) // i.e. the number of jets in argument
+> PlotZElectrons(1,19) // i.e. do the plot for 1 jet with 19 bins in the invmass
+
+* toy MC:
+> root -l src/RooLogon.C
+> .L src/GenerateZjets.cc
+> SetNjets(1)
+> Generate(1000) // i.e. generate 1000 toy MC experiments
