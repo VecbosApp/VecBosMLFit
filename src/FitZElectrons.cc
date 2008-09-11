@@ -49,7 +49,7 @@ void FitZElectrons() {
   // Load the data
   theFit.addDataSetFromRootFile("theData", "zjets", "datasets/zee-1jets.root");
   RooDataSet *data = theFit.getDataSet("theData");
-  //  data->setWeightVar("CSA07weight");
+  data->setWeightVar("CSA07weight");
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -77,7 +77,7 @@ void PlotZElectrons(int nbins=19) {
   // Load the data
   theFit.addDataSetFromRootFile("theData", "zjets", "datasets/zee-1jets.root");
   RooDataSet *data = theFit.getDataSet("theData");
-  //  data->setWeightVar("CSA07weight");
+  data->setWeightVar("CSA07weight");
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -88,8 +88,7 @@ void PlotZElectrons(int nbins=19) {
   TCanvas *c = new TCanvas("c","fitResult");
   TFile *output = new TFile("shapesZee/root/mll-ZonlyWeight-1jet.root","RECREATE");
 
-  //  RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins, false);    
-  RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins);    
+  RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins, false);    
 
   MassPlot->SetYTitle("Events");
   MassPlot->Draw();
