@@ -42,12 +42,14 @@ void myFit() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Fit a sample of Z events
-void FitZElectrons() {
+void FitZElectrons(int njets) {
   
   myFit();
 
   // Load the data
-  theFit.addDataSetFromRootFile("theData", "zjets", "datasets/zee-1jets.root");
+  char datasetname[200];
+  sprintf(datasetname,"datasets/zee-%djets.root",njets);
+  theFit.addDataSetFromRootFile("theData", "zjets", datasetname);
   RooDataSet *data = theFit.getDataSet("theData");
   data->setWeightVar("CSA07weight");
 
@@ -65,17 +67,21 @@ void FitZElectrons() {
   fitres->Print("V");
   
   // write the config file corresponding to the fit minimum
-  theFit.writeConfigFile("shapesZee/config/fitMinimumZonlyWeight-1jet.config");  
+  char configfilename[200];
+  sprintf(configfilename, "shapesZee/config/fitMinimumZonlyWeight-%djet.config",njets);
+  theFit.writeConfigFile(configfilename);  
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PlotZElectrons(int nbins=19) {
+void PlotZElectrons(int njets, int nbins=19) {
 
   myFit();
 
   // Load the data
-  theFit.addDataSetFromRootFile("theData", "zjets", "datasets/zee-1jets.root");
+  char datasetname[200];
+  sprintf(datasetname,"datasets/zee-%djets.root",njets);
+  theFit.addDataSetFromRootFile("theData", "zjets", datasetname);
   RooDataSet *data = theFit.getDataSet("theData");
   data->setWeightVar("CSA07weight");
 
@@ -83,16 +89,22 @@ void PlotZElectrons(int nbins=19) {
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
 
   // Initialize the fit...
-  theFit.initialize("shapesZee/config/fitMinimumZonlyWeight-1jet.config");
+  char configfilename[200];
+  sprintf(configfilename, "shapesZee/config/fitMinimumZonlyWeight-%djet.config",njets);
+  theFit.initialize(configfilename);
 
   TCanvas *c = new TCanvas("c","fitResult");
-  TFile *output = new TFile("shapesZee/root/mll-ZonlyWeight-1jet.root","RECREATE");
+  char rootfilename[200];
+  sprintf(rootfilename,"shapesZee/root/mll-ZonlyWeight-%djet.root");
+  TFile *output = new TFile(rootfilename,"RECREATE");
 
   RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins, false);    
 
   MassPlot->SetYTitle("Events");
   MassPlot->Draw();
-  c->SaveAs("shapesZee/eps/mll-ZonlyWeight-1jet.eps");
+  char epsfilename[200];
+  sprintf(epsfilename,"shapesZee/eps/mll-ZonlyWeight-%djet.eps",njets);
+  c->SaveAs(epsfilename);
   MassPlot->Write();
   //  output->Close();
 
