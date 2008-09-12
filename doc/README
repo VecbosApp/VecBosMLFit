@@ -36,3 +36,8 @@ this is the analysis. This varies with time
 > .L src/GenerateZjets.cc
 > SetNjets(1)
 > Generate(1000) // i.e. generate 1000 toy MC experiments
+
+at the end, plot the results (the pull on the fitted variables and the error) with:
+
+> .L src/makeplotstoyZjets.cxx
+> makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat", TString varfile = "variablesZjets.root")
