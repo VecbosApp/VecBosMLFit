@@ -1,6 +1,6 @@
 // macor to make usual plots from a set of Toys
 void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat", 
-		       TString varfile = "variablesZjets.root") {
+		       TString varfile = "variablesZjets.root", TString suffix = "1jet") {
 
   gROOT->SetStyle("Plain");
   // do not display any of the standard histogram decorations
@@ -28,7 +28,10 @@ void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat
   N_sig_pull->Fit("gaus");
   N_sig_pull->GetXaxis()->SetTitle("Pull N_{sig}");
 
-  c1->SaveAs("toy-plots/N_sig_pull_Z1j.eps");
+  TString pullstring("toy-plots/N_sig_pull_");
+  pullstring.Append(suffix);
+  pullstring.Append(".eps");
+  c1->SaveAs(pullstring);
 
   // error distributions
   TCanvas* c2 = new TCanvas("c2","c2",500,500);
@@ -41,7 +44,11 @@ void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat
   gStyle->SetOptStat(1111111);
   N_sig_err->GetXaxis()->SetTitle("#sigma(N_{sig})");
   N_sig_err->Draw();
-  c2->SaveAs("toy-plots/N_sig_err_Z1j.eps");
+
+  TString errstring("toy-plots/N_sig_err_");
+  errstring.Append(suffix);
+  errstring.Append(".eps");
+  c2->SaveAs(errstring);
 
 }
 
