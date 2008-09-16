@@ -28,7 +28,7 @@ void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat
   N_sig_pull->Fit("gaus");
   N_sig_pull->GetXaxis()->SetTitle("Pull N_{sig}");
 
-  TString pullstring("toy-plots/N_sig_pull_");
+  TString pullstring("toy-plots/Zjets/N_sig_pull_");
   pullstring.Append(suffix);
   pullstring.Append(".eps");
   c1->SaveAs(pullstring);
@@ -45,7 +45,7 @@ void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat
   N_sig_err->GetXaxis()->SetTitle("#sigma(N_{sig})");
   N_sig_err->Draw();
 
-  TString errstring("toy-plots/N_sig_err_");
+  TString errstring("toy-plots/Zjets/N_sig_err_");
   errstring.Append(suffix);
   errstring.Append(".eps");
   c2->SaveAs(errstring);
