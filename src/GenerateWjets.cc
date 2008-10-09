@@ -20,7 +20,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   RooRandom::randomGenerator()->SetSeed(seed);
 
   // define the structure of the dataset
-  RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 0., 250.);
+  RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
 
   MLFit theFit;
 
@@ -37,7 +37,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   
   // mLL PDF
   theFit.addPdfWName("myFit", "sig" , "transvMass",  "Cruijff", "sig_Mass");
-  theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "DoubleCruijff", "zeeBkg_Mass");
+  theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Cruijff", "zeeBkg_Mass");
   theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Cruijff", "ttbarBkg_Mass");
   theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Poly2", "qcdBkg_Mass");
   

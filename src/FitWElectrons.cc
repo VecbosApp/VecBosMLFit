@@ -18,7 +18,7 @@ void myFit() {
   MLOptions opts = GetDefaultOptions();
   
   // define the structure of the dataset
-  RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 0., 250.);
+  RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
   RooRealVar* weight = new RooRealVar("CSA07weight", "CSA07weight", 0., 100.);
   
   theFit.AddFlatFileColumn(mass);
@@ -36,7 +36,7 @@ void myFit() {
   // mLL PDF
   if(opts.getBoolVal("usetransvMass")) {
     theFit.addPdfWName("myFit", "sig" , "transvMass",  "Cruijff", "sig_Mass");
-    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "DoubleCruijff", "zeeBkg_Mass");
+    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Cruijff", "zeeBkg_Mass");
     theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Cruijff", "ttbarBkg_Mass");
     theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Poly2", "qcdBkg_Mass");
   }
