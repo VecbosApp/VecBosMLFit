@@ -41,3 +41,19 @@ at the end, plot the results (the pull on the fitted variables and the error) wi
 
 > .L src/makeplotstoyZjets.cxx
 > makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat", TString varfile = "variablesZjets.root")
+
+
+--- batch submission ---
+example of how to use the perl script to submit to Roma batch farm:
+
+./SubmitGenerate.pl -r ~/Vecbos/CMSSW_2_1_9 -n 5000 -j 10 -p w -b 4 -x src/GenerateWjets.cc
+
+submits:
+- 5000 experiments
+- on 10 jobs (each containing 500 experiments)
+- outputs are called wjets (-p or --prefix option)
+- for jet multiplicity = 4
+- using the macro src/GenerateWjets.cc
+
+full list of options running ./SubmitGenerate.pl without arguments
+
