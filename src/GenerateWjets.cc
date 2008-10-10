@@ -65,7 +65,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   theStudy.generateAndFit(nexp,ngen);
   
   char resultfilename[200];
-  sprintf(resultfilename,"toys/resultsW-%djet.dat",njets);
+  sprintf(resultfilename,"toys/output/resultsW-%djet.dat",njets);
   theStudy._fitParData->write(resultfilename);
 
   TFile varfile("toys/variablesWjets.root","RECREATE");
