@@ -145,8 +145,9 @@ my $results=`ls -1 $outputdir/results-jet$jetbin-[0-9]*.dat 2> /dev/null`;
 for (my $i = 1; $i <= $njobs; $i++){
 
     print "Running job $i out of $njobs\n";
-    my $logfile="$logdir/results-$prefix$jetbin\jet-$i.log";
+    my $logfile = "$logdir/results-$prefix$jetbin\jet-$i.log";
     my $iscript = "$scriptdir/script-$prefix$jetbin\jet-$i.csh";
+    my $outfile = "$outputdir/results-$prefix$jetbin\jet-$i.dat"; 
     my $iseed = int(rand(65536));
     open(SCRIPTFILE,">$iscript");
     print SCRIPTFILE "\#\!/bin/tcsh\n\n";
@@ -157,7 +158,7 @@ for (my $i = 1; $i <= $njobs; $i++){
     print SCRIPTFILE ".L $command\n";
     print SCRIPTFILE "SetSeed($iseed)\n";
     print SCRIPTFILE "SetNjets($jetbin)\n";
-    print SCRIPTFILE "Generate($nExpPerJob,$iseed)\n";
+    print SCRIPTFILE "Generate($nExpPerJob,$iseed,\"$outfile\")\n";
     print SCRIPTFILE ".q\n";
     print SCRIPTFILE "EOF\n";
     if ($interactive==1) {
