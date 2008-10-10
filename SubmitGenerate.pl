@@ -146,7 +146,8 @@ for (my $i = 1; $i <= $njobs; $i++){
 
     print "Running job $i out of $njobs\n";
     my $logfile="$logdir/results-$prefix$jetbin\jet-$i.log";
-    my $iscript = "$scriptdir/script-$i.csh";
+    my $iscript = "$scriptdir/script-$prefix$jetbin\jet-$i.csh";
+    my $iseed = int(rand(65536));
     open(SCRIPTFILE,">$iscript");
     print SCRIPTFILE "\#\!/bin/tcsh\n\n";
     print SCRIPTFILE "cd $release\n";
@@ -154,8 +155,9 @@ for (my $i = 1; $i <= $njobs; $i++){
     print SCRIPTFILE "cd -\n";
     print SCRIPTFILE "root -b src/RooLogon.C <<EOF\n";
     print SCRIPTFILE ".L $command\n";
+    print SCRIPTFILE "SetSeed($iseed)\n";
     print SCRIPTFILE "SetNjets($jetbin)\n";
-    print SCRIPTFILE "Generate($nExpPerJob)\n";
+    print SCRIPTFILE "Generate($nExpPerJob,$iseed)\n";
     print SCRIPTFILE ".q\n";
     print SCRIPTFILE "EOF\n";
     if ($interactive==1) {
