@@ -26,7 +26,7 @@ if ($#ARGV < 1) {
     print <<ENDOFTEXT;
 usage: SubmitGenerate.pl [OPTIONS]
 
- -b, --bin=INTEGER
+ -b, --jetbin=INTEGER
        Jet bin multiplicity to run.  Default=$jetbin
 
  -n, --nexp=INTEGER
@@ -60,6 +60,7 @@ ENDOFTEXT
 }
 
 GetOptions(
+	   "jetbin|b=i"    => \$jetbin,
 	   "nexp|n=i"      => \$nexp,
 	   "jobs|j=i"      => \$njobs,
 	   "queue|q=s"     => \$queue,
@@ -160,7 +161,7 @@ for (my $i = 1; $i <= $njobs; $i++){
     if ($interactive==1) {
 	system("source $iscript");
     } else {
-	system("bsub -q $queue -o $logfile -J jet$jetbin-$i < $iscript");
+	system("bsub -q $queue -o $logfile -J $prefix$jetbin\jet-$i < $iscript");
     }
 }
 
