@@ -54,6 +54,7 @@ submits:
 - outputs are called wjets (-p or --prefix option)
 - for jet multiplicity = 4
 - using the macro src/GenerateWjets.cc
+- set the ROOT version of release CMSSW_2_1_9
 
 full list of options running ./SubmitGenerate.pl without arguments
 
