@@ -35,9 +35,9 @@ void myFit() {
   
   // mLL PDF
   if(opts.getBoolVal("usetransvMass")) {
-    theFit.addPdfWName("myFit", "sig" , "transvMass",  "Cruijff", "sig_Mass");
-    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Cruijff", "zeeBkg_Mass");
-    theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Cruijff", "ttbarBkg_Mass");
+    theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
+    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
+    theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
     theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Poly2", "qcdBkg_Mass");
   }
   
