@@ -36,9 +36,9 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   theFit.addSpecies("myFit", "qcdBkg", "QCD Bkg   Component");
   
   // mLL PDF
-  theFit.addPdfWName("myFit", "sig" , "transvMass",  "Cruijff", "sig_Mass");
-  theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Cruijff", "zeeBkg_Mass");
-  theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Cruijff", "ttbarBkg_Mass");
+  theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
+  theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
+  theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
   theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Poly2", "qcdBkg_Mass");
   
   // build the fit likelihood
