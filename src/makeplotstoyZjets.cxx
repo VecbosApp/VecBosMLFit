@@ -7,7 +7,7 @@ void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat
   gStyle->SetOptTitle(0);
 
   TH1D* N_sig_pull = new TH1D("N_sig_pull"," ",20, -4., 4.);
-  TH1D* N_sig_err = new TH1D("N_sig_err"," ",400, 0., 150.);
+  TH1D* N_sig_err = new TH1D("N_sig_err"," ",30, 0., 20.);
 
   gStyle->SetOptFit(1111111);
   TTree* ntp = readtoy(dir,file,varfile);
