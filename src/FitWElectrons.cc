@@ -19,10 +19,8 @@ void myFit() {
   
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar* weight = new RooRealVar("CSA07weight", "CSA07weight", 0., 100.);
   
   theFit.AddFlatFileColumn(mass);
-  theFit.AddFlatFileColumn(weight);
   
   // define a fit model
   theFit.addModel("myFit", "Ratio WtoENu");
@@ -38,7 +36,7 @@ void myFit() {
     theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
     theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
     theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
-    theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Poly2", "qcdBkg_Mass");
+    theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
   }
   
 }
@@ -52,11 +50,11 @@ void FitWElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/wenu-%djets.root",njets);
-  theFit.addDataSetFromRootFile("theData", "wjets", datasetname);
-  RooDataSet *data = theFit.getDataSet("theData");
-  data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
-  data->setWeightVar("CSA07weight");
+  sprintf(datasetname,"datasets/wenu_21X-%djets.root",njets);
+  const char *treename = "WjetsMADGRAPH";
+  theFit.addDataSetFromRootFile(treename, treename, datasetname);
+  RooDataSet *data = theFit.getDataSet(treename);
+  //  data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -85,11 +83,11 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/wenu-%djets.root",njets);
-  theFit.addDataSetFromRootFile("theData", "wjets", datasetname);
-  RooDataSet *data = theFit.getDataSet("theData");
-  data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
-  data->setWeightVar("CSA07weight");
+  sprintf(datasetname,"datasets/wenu_21X-%djets.root",njets);
+  const char *treename = "WjetsMADGRAPH";
+  theFit.addDataSetFromRootFile(treename, treename, datasetname);
+  RooDataSet *data = theFit.getDataSet(treename);
+  // data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -104,7 +102,7 @@ void PlotWElectrons(int njets, int nbins) {
   sprintf(rootfilename,"shapesZee/root/mtw-WonlyWeight-%djet.root");
   TFile *output = new TFile(rootfilename,"RECREATE");
 
-  RooPlot* MassPlot = MakePlot("transvMass", &theFit, data, nbins, false);    
+  RooPlot* MassPlot = MakePlot("transvMass", &theFit, data, nbins);    
 
   MassPlot->SetYTitle("Events");
   MassPlot->Draw();

@@ -18,11 +18,9 @@ void myFit() {
   MLOptions opts = GetDefaultOptions();
   
   // define the structure of the dataset
-  RooRealVar* mass = new RooRealVar("invMass",  "Mass [GeV/c^{2}]" , 70., 110.);
-  RooRealVar* weight = new RooRealVar("CSA07weight", "CSA07weight", 0., 100.);
+  RooRealVar* mass = new RooRealVar("invMass",  "Mass [GeV/c^{2}]" , 60., 110.);
   
   theFit.AddFlatFileColumn(mass);
-  theFit.AddFlatFileColumn(weight);
   
   // define a fit model
   theFit.addModel("myFit", "Ratio ZtoEE");
@@ -48,10 +46,10 @@ void FitZElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/zee-%djets.root",njets);
-  theFit.addDataSetFromRootFile("theData", "zjets", datasetname);
-  RooDataSet *data = theFit.getDataSet("theData");
-  data->setWeightVar("CSA07weight");
+  sprintf(datasetname,"datasets/zee_21X-%djets.root",njets);
+  const char *treename = "ZjetsMADGRAPH";
+  theFit.addDataSetFromRootFile(treename, treename, datasetname);
+  RooDataSet *data = theFit.getDataSet(treename);
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -80,10 +78,10 @@ void PlotZElectrons(int njets, int nbins=19) {
 
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/zee-%djets.root",njets);
-  theFit.addDataSetFromRootFile("theData", "zjets", datasetname);
-  RooDataSet *data = theFit.getDataSet("theData");
-  data->setWeightVar("CSA07weight");
+  sprintf(datasetname,"datasets/zee_21X-%djets.root",njets);
+  const char *treename = "ZjetsMADGRAPH";
+  theFit.addDataSetFromRootFile(treename, treename, datasetname);
+  RooDataSet *data = theFit.getDataSet(treename);
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -98,7 +96,7 @@ void PlotZElectrons(int njets, int nbins=19) {
   sprintf(rootfilename,"shapesZee/root/mll-ZonlyWeight-%djet.root");
   TFile *output = new TFile(rootfilename,"RECREATE");
 
-  RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins, false);    
+  RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins);    
 
   MassPlot->SetYTitle("Events");
   MassPlot->Draw();
