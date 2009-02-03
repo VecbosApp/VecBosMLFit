@@ -3,6 +3,7 @@ MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
   opts.addBoolOption("useinvMass", "Use invMass", kTRUE);        
+  opts.addBoolOption("useSinMHTphiMET", "Use sin(MHTphiMET)", kTRUE);
   return opts;
 }
 
@@ -17,7 +18,7 @@ void myFit() {
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
   opts.addBoolOption("useinvMass", "Use Z Invariant Mass", kTRUE);
-  opts.addBoolOption("useMHTphiMET", "Use MHTphiMET", kTRUE);
+  opts.addBoolOption("useSinMHTphiMET", "Use sin(MHTphiMET)", kTRUE);
 
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("invMass",  "Mass [GeV/c^{2}]" , 60., 110.);
@@ -39,7 +40,7 @@ void myFit() {
     theFit.addPdfWName("myFit", "ttbarbkg" , "invMass",  "Poly2",  "ttbarbkg_Mass");
   }
   // shape variable
-  if(opts.getBoolVal("useMHTphiMET")) {
+  if(opts.getBoolVal("useSinMHTphiMET")) {
     theFit.addPdfWName("myFit", "sig" , "sinMHTphiMET",  "DoubleGaussian", "sig_sinMHTphiMET");
     theFit.addPdfWName("myFit", "ttbarbkg" , "sinMHTphiMET",  "Poly2", "ttbarbkg_sinMHTphiMET");
   }

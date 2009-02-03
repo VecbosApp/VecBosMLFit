@@ -3,6 +3,7 @@ MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
   opts.addBoolOption("usetransvMass", "Use transverse mass", kTRUE);        
+  opts.addBoolOption("useMHTphiJet", "Use MHTphiJet", kTRUE);
   return opts;
 }
 
@@ -16,7 +17,7 @@ void myFit() {
 
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
-  opts.addBoolOption("usetransvMass", "Use W Transverse Mass", kFALSE);
+  opts.addBoolOption("usetransvMass", "Use W Transverse Mass", kTRUE);
   opts.addBoolOption("useMHTphiJet", "Use MHTphiJet", kTRUE);
   
   // define the structure of the dataset
@@ -36,12 +37,12 @@ void myFit() {
   theFit.addSpecies("myFit", "qcdBkg", "QCD Bkg   Component");
   
   // mLL PDF
-//   if(opts.getBoolVal("usetransvMass")) {
-//     theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
-//     theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
-//     theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
-//     theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
-//   }
+  if(opts.getBoolVal("usetransvMass")) {
+    theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
+    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
+    theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
+    theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
+  }
   // shape variable
   if(opts.getBoolVal("useMHTphiJet")) {
     theFit.addPdfWName("myFit", "sig" , "sinMHTphiJet",  "DoubleGaussian", "sig_MHTphiJet");
