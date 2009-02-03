@@ -16,12 +16,16 @@ void myFit() {
 
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
+  opts.addBoolOption("usetransvMass", "Use W Transverse Mass", kFALSE);
+  opts.addBoolOption("useMHTphiJet", "Use MHTphiJet", kTRUE);
   
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
+  RooRealVar* sinMHTphiJet = new RooRealVar("sinMHTphiJet", "sin #phi_{MHT-Jets}",-0.85,0.85);
   
   theFit.AddFlatFileColumn(mass);
-  
+  theFit.AddFlatFileColumn(sinMHTphiJet);
+
   // define a fit model
   theFit.addModel("myFit", "Ratio WtoENu");
   
@@ -32,11 +36,18 @@ void myFit() {
   theFit.addSpecies("myFit", "qcdBkg", "QCD Bkg   Component");
   
   // mLL PDF
-  if(opts.getBoolVal("usetransvMass")) {
-    theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
-    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
-    theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
-    theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
+//   if(opts.getBoolVal("usetransvMass")) {
+//     theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
+//     theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
+//     theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
+//     theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
+//   }
+  // shape variable
+  if(opts.getBoolVal("useMHTphiJet")) {
+    theFit.addPdfWName("myFit", "sig" , "sinMHTphiJet",  "DoubleGaussian", "sig_MHTphiJet");
+    theFit.addPdfWName("myFit", "zeeBkg" , "sinMHTphiJet",  "DoubleGaussian", "zeeBkg_MHTphiJet");
+    theFit.addPdfWName("myFit", "ttbarBkg" , "sinMHTphiJet",  "DoubleGaussian", "ttbarBkg_MHTphiJet");
+    theFit.addPdfWName("myFit", "qcdBkg" , "sinMHTphiJet",  "Poly2", "qcdBkg_MHTphiJet");
   }
   
 }
@@ -51,16 +62,16 @@ void FitWElectrons(int njets) {
   // Load the data
   char datasetname[200];
   sprintf(datasetname,"datasets/wenu_21X-%djets.root",njets);
-  const char *treename = "WjetsMADGRAPH";
+  const char *treename = "QCD";
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
-  //  data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
+  // data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
   
   // Initialize the fit...
-  theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-Wonly.config");
+  theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-QCDonly.config");
   
   // Print Fit configuration 
   myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
@@ -71,7 +82,7 @@ void FitWElectrons(int njets) {
   
   // write the config file corresponding to the fit minimum
   char configfilename[200];
-  sprintf(configfilename, "shapesWenu/config/fitMinimumWonlyWeight-%djet.config",njets);
+  sprintf(configfilename, "shapesWenu/config/fitMinimumQCDonly-sinMHTphiJet-%djet.config",njets);
   theFit.writeConfigFile(configfilename);  
 }
 
@@ -84,7 +95,7 @@ void PlotWElectrons(int njets, int nbins) {
   // Load the data
   char datasetname[200];
   sprintf(datasetname,"datasets/wenu_21X-%djets.root",njets);
-  const char *treename = "WjetsMADGRAPH";
+  const char *treename = "QCD";
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
   // data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
@@ -94,20 +105,20 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Initialize the fit...
   char configfilename[200];
-  sprintf(configfilename, "shapesWenu/config/fitMinimumWonlyWeight-%djet.config",njets);
+  sprintf(configfilename, "shapesWenu/config/fitMinimumQCDonly-sinMHTphiJet-%djet.config",njets);
   theFit.initialize(configfilename);
 
   TCanvas *c = new TCanvas("c","fitResult");
   char rootfilename[200];
-  sprintf(rootfilename,"shapesZee/root/mtw-WonlyWeight-%djet.root");
+  sprintf(rootfilename,"shapesWenu/root/sinMHTphiJet-QCDonly-%djet.root",njets);
   TFile *output = new TFile(rootfilename,"RECREATE");
 
-  RooPlot* MassPlot = MakePlot("transvMass", &theFit, data, nbins);    
+  RooPlot* MassPlot = MakePlot("sinMHTphiJet", &theFit, data, nbins);    
 
   MassPlot->SetYTitle("Events");
   MassPlot->Draw();
   char epsfilename[200];
-  sprintf(epsfilename,"shapesWenu/eps/mtw-WonlyWeight-%djet.eps",njets);
+  sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-QCDonly-%djet.eps",njets);
   c->SaveAs(epsfilename);
   MassPlot->Write();
   //  output->Close();

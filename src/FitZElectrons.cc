@@ -16,12 +16,16 @@ void myFit() {
 
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
-  
+  opts.addBoolOption("useinvMass", "Use Z Invariant Mass", kTRUE);
+  opts.addBoolOption("useMHTphiMET", "Use MHTphiMET", kTRUE);
+
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("invMass",  "Mass [GeV/c^{2}]" , 60., 110.);
+  RooRealVar* sinMHTphiMET = new RooRealVar("sinMHTphiMET", "sin #phi_{MHT-MET}",-0.85,0.85);
   
   theFit.AddFlatFileColumn(mass);
-  
+  theFit.AddFlatFileColumn(sinMHTphiMET);
+
   // define a fit model
   theFit.addModel("myFit", "Ratio ZtoEE");
   
@@ -33,6 +37,11 @@ void myFit() {
   if(opts.getBoolVal("useinvMass")) {
     theFit.addPdfWName("myFit", "sig" , "invMass",  "Cruijff", "sig_Mass");
     theFit.addPdfWName("myFit", "ttbarbkg" , "invMass",  "Poly2",  "ttbarbkg_Mass");
+  }
+  // shape variable
+  if(opts.getBoolVal("useMHTphiMET")) {
+    theFit.addPdfWName("myFit", "sig" , "sinMHTphiMET",  "DoubleGaussian", "sig_sinMHTphiMET");
+    theFit.addPdfWName("myFit", "ttbarbkg" , "sinMHTphiMET",  "Poly2", "ttbarbkg_sinMHTphiMET");
   }
   
 }
@@ -47,7 +56,7 @@ void FitZElectrons(int njets) {
   // Load the data
   char datasetname[200];
   sprintf(datasetname,"datasets/zee_21X-%djets.root",njets);
-  const char *treename = "ZjetsMADGRAPH";
+  const char *treename = "ttjetsMADGRAPH";
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
 
@@ -55,7 +64,7 @@ void FitZElectrons(int njets) {
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
   
   // Initialize the fit...
-  theFit.initialize("shapesZee/config/RatioElectrons-ZjetsFit-Zonly.config");
+  theFit.initialize("shapesZee/config/RatioElectrons-ZjetsFit-TTbaronly.config");
   
   // Print Fit configuration 
   myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
@@ -66,7 +75,7 @@ void FitZElectrons(int njets) {
   
   // write the config file corresponding to the fit minimum
   char configfilename[200];
-  sprintf(configfilename, "shapesZee/config/fitMinimumZonlyWeight-%djet.config",njets);
+  sprintf(configfilename, "shapesZee/config/fitMinimumTTbaronly-sinMHTphiMET-%djet.config",njets);
   theFit.writeConfigFile(configfilename);  
 }
 
@@ -79,7 +88,7 @@ void PlotZElectrons(int njets, int nbins=19) {
   // Load the data
   char datasetname[200];
   sprintf(datasetname,"datasets/zee_21X-%djets.root",njets);
-  const char *treename = "ZjetsMADGRAPH";
+  const char *treename = "ttjetsMADGRAPH";
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
 
@@ -88,20 +97,20 @@ void PlotZElectrons(int njets, int nbins=19) {
 
   // Initialize the fit...
   char configfilename[200];
-  sprintf(configfilename, "shapesZee/config/fitMinimumZonlyWeight-%djet.config",njets);
+  sprintf(configfilename, "shapesZee/config/fitMinimumTTbaronly-sinMHTphiMET-%djet.config",njets);
   theFit.initialize(configfilename);
 
   TCanvas *c = new TCanvas("c","fitResult");
   char rootfilename[200];
-  sprintf(rootfilename,"shapesZee/root/mll-ZonlyWeight-%djet.root");
+  sprintf(rootfilename,"shapesZee/root/sinMHTphiMET-TTbaronly-%djet.root",njets);
   TFile *output = new TFile(rootfilename,"RECREATE");
 
-  RooPlot* MassPlot = MakePlot("invMass", &theFit, data, nbins);    
+  RooPlot* MassPlot = MakePlot("sinMHTphiMET", &theFit, data, nbins);    
 
   MassPlot->SetYTitle("Events");
   MassPlot->Draw();
   char epsfilename[200];
-  sprintf(epsfilename,"shapesZee/eps/mll-ZonlyWeight-%djet.eps",njets);
+  sprintf(epsfilename,"shapesZee/eps/sinMHTphiMET-TTbaronly-%djet.eps",njets);
   c->SaveAs(epsfilename);
   MassPlot->Write();
   //  output->Close();
