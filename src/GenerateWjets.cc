@@ -21,11 +21,13 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
 
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
+  RooRealVar* sinMHTphiJet = new RooRealVar("sinMHTphiJet", "sin #phi_{MHT-Jets}",-0.85,0.85);
 
   MLFit theFit;
 
   theFit.AddFlatFileColumn(mass);
-  
+  theFit.AddFlatFileColumn(sinMHTphiJet);
+
   // define a fit model
   theFit.addModel("myFit", "Ratio WtoENu");
   
@@ -39,7 +41,12 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
   theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
   theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
-  theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Poly2", "qcdBkg_Mass");
+  theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
+
+  theFit.addPdfWName("myFit", "sig" , "sinMHTphiJet",  "DoubleGaussian", "sig_MHTphiJet");
+  theFit.addPdfWName("myFit", "zeeBkg" , "sinMHTphiJet",  "DoubleGaussian", "zeeBkg_MHTphiJet");
+  theFit.addPdfWName("myFit", "ttbarBkg" , "sinMHTphiJet",  "DoubleGaussian", "ttbarBkg_MHTphiJet");
+  theFit.addPdfWName("myFit", "qcdBkg" , "sinMHTphiJet",  "Poly2", "qcdBkg_MHTphiJet");
   
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -58,7 +65,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
     theFit.getRealPar("N_sig")->getVal();
 
   // Generate...
-  RooArgSet genVars(theFit.getObsList(MLStrList("transvMass")));
+  RooArgSet genVars(theFit.getObsList(MLStrList("transvMass","sinMHTphiJet")));
   MLToyStudy theStudy(theGenerator, genVars, "E", "MTE", 0, theFit.getNoNormVars("myFit"));
   theStudy.addFit(*myPdf);
 

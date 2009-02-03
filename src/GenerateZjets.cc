@@ -20,12 +20,14 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   RooRandom::randomGenerator()->SetSeed(seed);
 
   // define the structure of the dataset
-  RooRealVar* mass = new RooRealVar("invMass",  "Mass [GeV/c^{2}]" , 70., 110.);
+  RooRealVar* mass = new RooRealVar("invMass",  "Mass [GeV/c^{2}]" , 60., 110.);
+  RooRealVar* sinMHTphiMET = new RooRealVar("sinMHTphiMET", "sin #phi_{MHT-MET}",-0.85,0.85);
 
   MLFit theFit;
 
   theFit.AddFlatFileColumn(mass);
-  
+  theFit.AddFlatFileColumn(sinMHTphiMET);
+
   // define a fit model
   theFit.addModel("myFit", "Ratio ZtoEE");
   
@@ -37,6 +39,10 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   theFit.addPdfWName("myFit", "sig" , "invMass",  "Cruijff",  "sig_Mass");
   theFit.addPdfWName("myFit", "ttbarbkg" , "invMass",  "Poly2",  "ttbarbkg_Mass");
   
+  // shape variable
+  theFit.addPdfWName("myFit", "sig" , "sinMHTphiMET",  "DoubleGaussian", "sig_sinMHTphiMET");
+  theFit.addPdfWName("myFit", "ttbarbkg" , "sinMHTphiMET",  "Poly2", "ttbarbkg_sinMHTphiMET");
+
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
   
@@ -52,7 +58,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
     theFit.getRealPar("N_sig")->getVal();
 
   // Generate...
-  RooArgSet genVars(theFit.getObsList(MLStrList("invMass")));
+  RooArgSet genVars(theFit.getObsList(MLStrList("invMass","sinMHTphiMET")));
   MLToyStudy theStudy(theGenerator, genVars, "E", "MTE", 0, theFit.getNoNormVars("myFit"));
   theStudy.addFit(*myPdf);
 
