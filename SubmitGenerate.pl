@@ -54,6 +54,8 @@ usage: SubmitGenerate.pl [OPTIONS]
  -r, --release=STRING
        CMSSW release where set the ROOT environment.
 
+example: ./SubmitGenerate.pl -r ~/releases/vecbos/CMSSW_2_1_17 -n 10000 -j 10 -q cmsshort -p z -b 3 -x src/GenerateZjets.cc
+
 ENDOFTEXT
 
    exit 0;
@@ -161,6 +163,7 @@ for (my $i = 1; $i <= $njobs; $i++){
     print SCRIPTFILE "Generate($nExpPerJob,$iseed,\"$outfile\")\n";
     print SCRIPTFILE ".q\n";
     print SCRIPTFILE "EOF\n";
+    system("chmod 777 $iscript");
     if ($interactive==1) {
 	system("source $iscript");
     } else {
