@@ -2,10 +2,16 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("usetransvMass", "Use transverse mass", kTRUE);        
-  opts.addBoolOption("useMHTphiJet", "Use MHTphiJet", kTRUE);
+  opts.addBoolOption("useMt",           "Use W Transverse Mass",  kTRUE);
+  opts.addBoolOption("useMHTphiJet",    "Use MHTphiJet",          kTRUE);
+  opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
+  opts.addBoolOption("WOnlyFit",        "Fit W species only",     kTRUE);
+  opts.addBoolOption("ttbarOnlyFit",    "Fit ttbar species only", kFALSE);
+  opts.addBoolOption("otherOnlyFit",    "Fit other species only", kFALSE);
+
   return opts;
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -17,40 +23,75 @@ void myFit() {
 
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
-  opts.addBoolOption("usetransvMass", "Use W Transverse Mass", kTRUE);
-  opts.addBoolOption("useMHTphiJet", "Use MHTphiJet", kTRUE);
+  opts.addBoolOption("useTightBVeto",   "Use Tight B Veto Rectangular Cut", kTRUE);
+  opts.addBoolOption("useMediumBVeto",  "Use Tight B Veto Rectangular Cut", kFALSE);
+  opts.addBoolOption("useLooseBVeto",   "Use Tight B Veto Rectangular Cut", kFALSE);
   
   // define the structure of the dataset
-  RooRealVar* mass = new RooRealVar("transvMass",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar* sinMHTphiJet = new RooRealVar("sinMHTphiJet", "sin #phi_{MHT-Jets}",-0.85,0.85);
-  
-  theFit.AddFlatFileColumn(mass);
+  RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
+  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",0);
+  RooRealVar* bvetoTightCat = new RooRealVar("BVetoTightCat", "BVetoTightCat",-1,1);
+  RooRealVar* bvetoMediumCat = new RooRealVar("BVetoMediumCat", "BVetoMediumCat",-1,1);
+  RooRealVar* bvetoLooseCat = new RooRealVar("BVetoLooseCat", "BVetoLooseCat",-1,1);
+
+  theFit.AddFlatFileColumn(Mt);
   theFit.AddFlatFileColumn(sinMHTphiJet);
+  theFit.AddFlatFileColumn(bvetoTightCat);
+  theFit.AddFlatFileColumn(bvetoMediumCat);
+  theFit.AddFlatFileColumn(bvetoLooseCat);
 
   // define a fit model
   theFit.addModel("myFit", "Ratio WtoENu");
   
-  // define species
-  theFit.addSpecies("myFit", "sig", "Signal Component");
-  theFit.addSpecies("myFit", "zeeBkg", "Z to ee Bkg   Component");
-  theFit.addSpecies("myFit", "ttbarBkg", "ttbar Bkg   Component");
-  theFit.addSpecies("myFit", "qcdBkg", "QCD Bkg   Component");
+  // define species accepted by b veto
+  theFit.addSpecies("myFit", "sig_a",    "Accepted Signal Component");
+  theFit.addSpecies("myFit", "ttbar_a",  "Accepted ttbar Component");
+  theFit.addSpecies("myFit", "other_a",  "Accepted Other Bkgs Component");
+
+  // define species rejected by b veto
+  theFit.addSpecies("myFit", "sig_r",    "Rejected Signal Component");
+  theFit.addSpecies("myFit", "ttbar_r",  "Rejected ttbar Component");
+  theFit.addSpecies("myFit", "other_r",  "Rejected Other Bkgs Component");
   
-  // mLL PDF
-  if(opts.getBoolVal("usetransvMass")) {
-    theFit.addPdfWName("myFit", "sig" , "transvMass",  "Totti", "sig_Mass");
-    theFit.addPdfWName("myFit", "zeeBkg" , "transvMass",  "Totti", "zeeBkg_Mass");
-    theFit.addPdfWName("myFit", "ttbarBkg" , "transvMass",  "Totti", "ttbarBkg_Mass");
-    theFit.addPdfWName("myFit", "qcdBkg" , "transvMass",  "Totti", "qcdBkg_Mass");
+  theFit.fitWithEff("sig_a", "sig_r", "sig");
+  theFit.fitWithEff("ttbar_a", "ttbar_r", "ttbar");
+  theFit.fitWithEff("other_a", "other_r", "other");
+
+  // Mt PDF
+  if(opts.getBoolVal("useMt")) {
+    theFit.addPdfWName("myFit", "sig_a",   "Mt", "CrystalCruijff", "sig_Mt");
+    theFit.addPdfWName("myFit", "ttbar_a", "Mt", "CrystalCruijff", "ttbar_Mt");
+    theFit.addPdfWName("myFit", "other_a", "Mt", "CrystalCruijff", "other_Mt");
+
+    theFit.addPdfCopy("myFit", "sig_r",   "Mt", "sig_a");
+    theFit.addPdfCopy("myFit", "ttbar_r", "Mt", "ttbar_a");
+    theFit.addPdfCopy("myFit", "other_r", "Mt", "other_a");
   }
-  // shape variable
+
+  // sinMHTphiJet PDF
   if(opts.getBoolVal("useMHTphiJet")) {
-    theFit.addPdfWName("myFit", "sig" , "sinMHTphiJet",  "DoubleGaussian", "sig_MHTphiJet");
-    theFit.addPdfWName("myFit", "zeeBkg" , "sinMHTphiJet",  "DoubleGaussian", "zeeBkg_MHTphiJet");
-    theFit.addPdfWName("myFit", "ttbarBkg" , "sinMHTphiJet",  "DoubleGaussian", "ttbarBkg_MHTphiJet");
-    theFit.addPdfWName("myFit", "qcdBkg" , "sinMHTphiJet",  "Poly2", "qcdBkg_MHTphiJet");
+    theFit.addPdfWName("myFit", "sig_a" ,   "sinMHTphiJet",  "Cruijff",  "sig_sinMHTphiJet");
+    theFit.addPdfWName("myFit", "ttbar_a",  "sinMHTphiJet",  "Cruijff",  "ttbar_sinMHTphiJet");
+    theFit.addPdfWName("myFit", "other_a",  "sinMHTphiJet",  "Cruijff",  "other_sinMHTphiJet");
+
+    theFit.addPdfCopy("myFit", "sig_r" ,   "sinMHTphiJet",  "sig_a");
+    theFit.addPdfCopy("myFit", "ttbar_r",  "sinMHTphiJet",  "ttbar_a");
+    theFit.addPdfCopy("myFit", "other_r",  "sinMHTphiJet",  "other_a");
   }
-  
+
+  // b veto category
+  TString catname = "BVetoTightCat";
+  if(opts.getBoolVal("useMediumBVeto")) catname = "BVetoMediumCat";
+  if(opts.getBoolVal("useLooseBVeto"))  catname = "BVetoLooseCat";
+
+  theFit.addPdfWName("myFit", "sig_a" ,   catname,  "Poly2",  "bveto_acc");
+  theFit.addPdfCopy("myFit",  "ttbar_a",  catname,  "sig_a");
+  theFit.addPdfCopy("myFit",  "other_a",  catname,  "sig_a");
+
+  theFit.addPdfWName("myFit", "sig_r" ,   catname,  "Poly2",  "bveto_rej");
+  theFit.addPdfCopy("myFit",  "ttbar_r",  catname,  "sig_r");
+  theFit.addPdfCopy("myFit",  "other_r",    catname,  "sig_r");
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,20 +101,28 @@ void FitWElectrons(int njets) {
   
   myFit();
 
+  // Various fit options...
+  MLOptions opts = GetDefaultOptions();
+
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/wenu_21X-%djets.root",njets);
-  const char *treename = "QCD";
+  sprintf(datasetname,"datasets/wenu_21X-%dcalojet.root",njets);
+  char treename[100];
+  if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WjetsMADGRAPH");
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(treename,"ttjetsMADGRAPH");
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(treename,"other");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
-  // data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
+  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("WToENuDecay==1");
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
   
   // Initialize the fit...
-  theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-QCDonly.config");
-  
+  if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-Wonly.config");
+  if(opts.getBoolVal("ttbarOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-TTbaronly.config");
+  if(opts.getBoolVal("otherOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-otheronly.config");
+
   // Print Fit configuration 
   myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
   myPdf->getParameters(data)->selectByAttrib("Constant",kFALSE)->Print("V");
@@ -83,8 +132,11 @@ void FitWElectrons(int njets) {
   
   // write the config file corresponding to the fit minimum
   char configfilename[200];
-  sprintf(configfilename, "shapesWenu/config/fitMinimumQCDonly-sinMHTphiJet-%djet.config",njets);
+  if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%dcalojet.config",njets);
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-TTbaronly-%dcalojet.config",njets);
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%dcalojet.config",njets);
   theFit.writeConfigFile(configfilename);  
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,36 +145,96 @@ void PlotWElectrons(int njets, int nbins) {
 
   myFit();
 
+  // Various fit options...
+  MLOptions opts = GetDefaultOptions();
+
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/wenu_21X-%djets.root",njets);
-  const char *treename = "QCD";
+  sprintf(datasetname,"datasets/wenu_21X-%dcalojet.root",njets);
+  char treename[100];
+  if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WjetsMADGRAPH");
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(treename,"ttjetsMADGRAPH");
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(treename,"other");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
-  // data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
+  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("WToENuDecay==1"); // only for signal
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
 
   // Initialize the fit...
   char configfilename[200];
-  sprintf(configfilename, "shapesWenu/config/fitMinimumQCDonly-sinMHTphiJet-%djet.config",njets);
+  if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%dcalojet.config",njets);
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-TTbaronly-%dcalojet.config",njets);
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%dcalojet.config",njets);
   theFit.initialize(configfilename);
 
-  TCanvas *c = new TCanvas("c","fitResult");
-  char rootfilename[200];
-  sprintf(rootfilename,"shapesWenu/root/sinMHTphiJet-QCDonly-%djet.root",njets);
-  TFile *output = new TFile(rootfilename,"RECREATE");
+  // draw normalized to the full yield, not N * bveto_eff
+  theFit.getRealPar("eff_sig")->setVal(1.);  
+  theFit.getRealPar("eff_ttbar")->setVal(1.);  
+  theFit.getRealPar("eff_other")->setVal(1.);  
 
-  RooPlot* MassPlot = MakePlot("sinMHTphiJet", &theFit, data, nbins);    
+  if(opts.getBoolVal("useMt")) {
+    TCanvas *c = new TCanvas("c","fitResult");
+    RooPlot* MassPlot = MakePlot("Mt", &theFit, data, nbins);    
+    
+    MassPlot->SetAxisColor(1,"x");
+    MassPlot->SetLabelColor(1, "X");
+    MassPlot->SetLabelColor(1, "Y");
+    MassPlot->SetXTitle("M_{T}[GeV/c^{2}]");
 
-  MassPlot->SetYTitle("Events");
-  MassPlot->Draw();
-  char epsfilename[200];
-  sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-QCDonly-%djet.eps",njets);
-  c->SaveAs(epsfilename);
-  MassPlot->Write();
-  //  output->Close();
+    MassPlot->SetYTitle("Events");
+    MassPlot->Draw();
+
+    char epsfilename[200];
+    char Cfilename[200];
+
+    if(opts.getBoolVal("WOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/Mt-Wonly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/macro/Mt-Wonly-%dcalojet.C",njets);
+    }
+    if(opts.getBoolVal("ttbarOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/Mt-TTbaronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/eps/Mt-TTbaronly-%dcalojet.eps",njets);
+    }
+    if(opts.getBoolVal("otherOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/Mt-otheronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/eps/Mt-otheronly-%dcalojet.eps",njets);
+    }
+    c->SaveAs(epsfilename);
+    c->SaveAs(Cfilename);
+  }
+
+  if(opts.getBoolVal("useMHTphiJet")) {
+    TCanvas *c = new TCanvas("c","fitResult");
+    RooPlot* AngularPlot = MakePlot("sinMHTphiJet", &theFit, data, nbins);    
+    
+    AngularPlot->SetAxisColor(1,"x");
+    AngularPlot->SetLabelColor(1, "X");
+    AngularPlot->SetLabelColor(1, "Y");
+    AngularPlot->SetXTitle("sin(#phi_{MHT-Jet})");
+
+    AngularPlot->SetYTitle("Events");
+    AngularPlot->Draw();
+
+    char epsfilename[200];
+    char Cfilename[200];
+
+    if(opts.getBoolVal("WOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-Wonly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-Wonly-%dcalojet.C",njets);
+    }
+    if(opts.getBoolVal("ttbarOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-TTbaronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/eps/sinMHTphiJet-TTbaronly-%dcalojet.eps",njets);
+    }
+    if(opts.getBoolVal("otherOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-otheronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/eps/sinMHTphiJet-otheronly-%dcalojet.eps",njets);
+    }
+    c->SaveAs(epsfilename);
+    c->SaveAs(Cfilename);
+  }
 
 }
 
