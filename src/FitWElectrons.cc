@@ -2,6 +2,7 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
+  opts.addBoolOption("fitCaloJets",     "Fit calojets, trackjets otherwise", kFALSE);
   opts.addBoolOption("useMt",           "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useMHTphiJet",    "Use MHTphiJet",          kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
@@ -45,9 +46,9 @@ void myFit() {
   theFit.addModel("myFit", "Ratio WtoENu");
   
   // define species accepted by b veto
+  theFit.addSpecies("myFit", "other_a",  "Accepted Other Bkgs Component");
   theFit.addSpecies("myFit", "sig_a",    "Accepted Signal Component");
   theFit.addSpecies("myFit", "ttbar_a",  "Accepted ttbar Component");
-  theFit.addSpecies("myFit", "other_a",  "Accepted Other Bkgs Component");
 
   // define species rejected by b veto
   theFit.addSpecies("myFit", "sig_r",    "Rejected Signal Component");
@@ -105,9 +106,13 @@ void FitWElectrons(int njets) {
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
 
+  char jetflavour[200];
+  if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
+  else sprintf(jetflavour, "trackjet");
+
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/wenu_21X-%dcalojet.root",njets);
+  sprintf(datasetname,"datasets/wenu_21X-%d%s.root",njets,jetflavour);
   char treename[100];
   if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WjetsMADGRAPH");
   if(opts.getBoolVal("ttbarOnlyFit")) sprintf(treename,"ttjetsMADGRAPH");
@@ -133,10 +138,20 @@ void FitWElectrons(int njets) {
   
   // write the config file corresponding to the fit minimum
   char configfilename[200];
-  if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%dcalojet.config",njets);
-  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-TTbaronly-%dcalojet.config",njets);
-  if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%dcalojet.config",njets);
+  if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%d%s.config",njets,jetflavour);
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-TTbaronly-%d%s.config",njets,jetflavour);
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%d%s.config",njets,jetflavour);
   theFit.writeConfigFile(configfilename);  
+
+  // save the fit result in ROOT 
+  char rootfilename[200];
+  if(opts.getBoolVal("WOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-Wonly-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-ttbaronly-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-otheronly-%d%s.root",njets,jetflavour);
+
+  TFile *file = new TFile(rootfilename,"recreate");
+  fitres->Write();
+  file->Close();
 
 }
 
@@ -149,9 +164,13 @@ void PlotWElectrons(int njets, int nbins) {
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
 
+  char jetflavour[200];
+  if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
+  else sprintf(jetflavour, "trackjet");
+
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/wenu_21X-%dcalojet.root",njets);
+  sprintf(datasetname,"datasets/wenu_21X-%d%s.root",njets,jetflavour);
   char treename[100];
   if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WjetsMADGRAPH");
   if(opts.getBoolVal("ttbarOnlyFit")) sprintf(treename,"ttjetsMADGRAPH");
@@ -165,9 +184,9 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Initialize the fit...
   char configfilename[200];
-  if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%dcalojet.config",njets);
-  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-TTbaronly-%dcalojet.config",njets);
-  if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%dcalojet.config",njets);
+  if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%d%s.config",njets,jetflavour);
+  if(opts.getBoolVal("ttbarOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-TTbaronly-%d%s.config",njets,jetflavour);
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%d%s.config",njets,jetflavour);
   theFit.initialize(configfilename);
 
   // draw normalized to the full yield, not N * bveto_eff
@@ -191,16 +210,16 @@ void PlotWElectrons(int njets, int nbins) {
     char Cfilename[200];
 
     if(opts.getBoolVal("WOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/Mt-Wonly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/macro/Mt-Wonly-%dcalojet.C",njets);
+      sprintf(epsfilename,"shapesWenu/eps/Mt-Wonly-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"shapesWenu/macro/Mt-Wonly-%d%s.C",njets,jetflavour);
     }
     if(opts.getBoolVal("ttbarOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/Mt-TTbaronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/macro/Mt-TTbaronly-%dcalojet.C",njets);
+      sprintf(epsfilename,"shapesWenu/eps/Mt-TTbaronly-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"shapesWenu/macro/Mt-TTbaronly-%d%s.C",njets,jetflavour);
     }
     if(opts.getBoolVal("otherOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/Mt-otheronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/macro/Mt-otheronly-%dcalojet.C",njets);
+      sprintf(epsfilename,"shapesWenu/eps/Mt-otheronly-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"shapesWenu/macro/Mt-otheronly-%d%s.C",njets,jetflavour);
     }
     c->SaveAs(epsfilename);
     c->SaveAs(Cfilename);
@@ -222,16 +241,16 @@ void PlotWElectrons(int njets, int nbins) {
     char Cfilename[200];
 
     if(opts.getBoolVal("WOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-Wonly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-Wonly-%dcalojet.C",njets);
+      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-Wonly-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-Wonly-%d%s.C",njets,jetflavour);
     }
     if(opts.getBoolVal("ttbarOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-TTbaronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-TTbaronly-%dcalojet.C",njets);
+      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-TTbaronly-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-TTbaronly-%d%s.C",njets,jetflavour);
     }
     if(opts.getBoolVal("otherOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-otheronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-otheronly-%dcalojet.C",njets);
+      sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-otheronly-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-otheronly-%d%s.C",njets,jetflavour);
     }
     c->SaveAs(epsfilename);
     c->SaveAs(Cfilename);
