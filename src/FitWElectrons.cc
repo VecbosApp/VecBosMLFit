@@ -23,6 +23,7 @@ void myFit() {
 
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
+
   opts.addBoolOption("useTightBVeto",   "Use Tight B Veto Rectangular Cut", kTRUE);
   opts.addBoolOption("useMediumBVeto",  "Use Tight B Veto Rectangular Cut", kFALSE);
   opts.addBoolOption("useLooseBVeto",   "Use Tight B Veto Rectangular Cut", kFALSE);
@@ -195,11 +196,11 @@ void PlotWElectrons(int njets, int nbins) {
     }
     if(opts.getBoolVal("ttbarOnlyFit")) {
       sprintf(epsfilename,"shapesWenu/eps/Mt-TTbaronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/eps/Mt-TTbaronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/macro/Mt-TTbaronly-%dcalojet.C",njets);
     }
     if(opts.getBoolVal("otherOnlyFit")) {
       sprintf(epsfilename,"shapesWenu/eps/Mt-otheronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/eps/Mt-otheronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/macro/Mt-otheronly-%dcalojet.C",njets);
     }
     c->SaveAs(epsfilename);
     c->SaveAs(Cfilename);
@@ -226,11 +227,11 @@ void PlotWElectrons(int njets, int nbins) {
     }
     if(opts.getBoolVal("ttbarOnlyFit")) {
       sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-TTbaronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/eps/sinMHTphiJet-TTbaronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-TTbaronly-%dcalojet.C",njets);
     }
     if(opts.getBoolVal("otherOnlyFit")) {
       sprintf(epsfilename,"shapesWenu/eps/sinMHTphiJet-otheronly-%dcalojet.eps",njets);
-      sprintf(Cfilename,"shapesWenu/eps/sinMHTphiJet-otheronly-%dcalojet.eps",njets);
+      sprintf(Cfilename,"shapesWenu/macro/sinMHTphiJet-otheronly-%dcalojet.C",njets);
     }
     c->SaveAs(epsfilename);
     c->SaveAs(Cfilename);
@@ -243,6 +244,10 @@ void PlotWElectrons(int njets, int nbins) {
 // Make the plot for a given variable
 RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, int nbins, bool poissonError=true)
 {
+
+  // Various fit options...
+  MLOptions opts = GetDefaultOptions();
+
   RooRealVar* Var = theFit->RealObservable(VarName);
   double min=Var->getMin();
   double max=Var->getMax();
@@ -254,12 +259,13 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, int nbins
   else 
     theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2) );
 
+  double Ns = theFit->getRealPar("N_sig")->getVal();
+  double Nttbar = theFit->getRealPar("N_ttbar")->getVal();
+  double Nother = theFit->getRealPar("N_other")->getVal();
+
   // plot the total likelihood
   RooAbsPdf *thePdf = theFit->getPdf("myFit");
-  thePdf->plotOn(plot, RooFit::LineColor(kBlack));
-
-  double Ns = theFit->getRealPar("N_sig")->getVal();
-  //  double Nb = theFit->getRealPar("N_bkg")->getVal();
+  thePdf->plotOn(plot, RooFit::LineColor(kBlack) );
 
   // plot (dashed) the bkg component
   //theFit->getRealPar("N_sig")->setVal(0.);
