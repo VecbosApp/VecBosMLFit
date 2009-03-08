@@ -6,7 +6,7 @@ void RooLogon() {
   // For the canvas:
   vecbosStyle->SetCanvasBorderMode(0);
   vecbosStyle->SetCanvasColor(kWhite);
-  vecbosStyle->SetCanvasDefH(600); //Height of canvas
+  vecbosStyle->SetCanvasDefH(300); //Height of canvas
   vecbosStyle->SetCanvasDefW(600); //Width of canvas
   vecbosStyle->SetCanvasDefX(0);   //POsition on screen
   vecbosStyle->SetCanvasDefY(0);
@@ -69,5 +69,5 @@ void RooLogon() {
 
   gSystem->Load("libPhysics");
   gSystem->Load("libRooFit") ;
-  gSystem->Load("../MLFit/workdir/libMLFit") ;
+  gSystem->Load("/afs/cern.ch/user/e/emanuele/scratch0/vecbos/OfflineAnalysis/MLFit/workdir/libMLFit") ;
 }
