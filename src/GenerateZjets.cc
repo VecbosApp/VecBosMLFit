@@ -106,7 +106,9 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   else sprintf(resultfilename, outfile, njets);
   theStudy._fitParData->write(resultfilename);
 
-  TFile varfile("toys/variablesZjets.root","RECREATE");
+  char variablesfilename[200];
+  sprintf(variablesfilename,"toys/variablesZ-%d%s.root",njets,jetflavour);
+  TFile varfile(variablesfilename,"RECREATE");
 
   RooArgSet *variables = theStudy._fitParData->get();
   variables->setName("variables");
