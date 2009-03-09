@@ -31,7 +31,7 @@ void myFit() {
   
   // define the structure of the dataset
   RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",0);
+  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.85, 0.85);
   RooRealVar* bvetoTightCat = new RooRealVar("BVetoTightCat", "BVetoTightCat",-1,1);
   RooRealVar* bvetoMediumCat = new RooRealVar("BVetoMediumCat", "BVetoMediumCat",-1,1);
   RooRealVar* bvetoLooseCat = new RooRealVar("BVetoLooseCat", "BVetoLooseCat",-1,1);
