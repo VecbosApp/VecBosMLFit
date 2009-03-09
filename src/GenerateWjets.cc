@@ -1,15 +1,20 @@
 int njets=0;
+Bool_t fitCaloJets=kTRUE;
 
 void SetNjets(int n) { 
   njets=n;
 }
 
+void SetJetFlavour(const char *jetflavour) {
+  if(strcmp(jetflavour,"calojet")==0) fitCaloJets = kTRUE;
+  else fitCaloJets = kFALSE;
+}
 
 // Set Fit Options
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("fitCaloJets",       "Fit calojets, trackjets otherwise", kFALSE);
+  opts.addBoolOption("fitCaloJets",       "Fit calojets, trackjets otherwise", fitCaloJets);
   opts.addBoolOption("useMt",             "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useMHTphiJet",      "Use MHTphiJet",          kTRUE);
   opts.addBoolOption("worstCaseScenario", "Use the same Mt shape for W and ttbar", kFALSE);
@@ -28,6 +33,13 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
   
+  const char* e0 = "\033[44;37m";
+  const char* en="\033[0m";
+  
+  if(opts.getBoolVal("fitCaloJets")) 
+    cout << e0 << "Toy Monte Carlo generation for W + " << njets << " calojets " << en << endl;
+  else cout << e0 << "Toy Monte Carlo generation for W + " << njets << " trackjets " << en << endl;
+
   TDatime *now = new TDatime();
   int today = now->GetDate();
   int clock = now->GetTime();
