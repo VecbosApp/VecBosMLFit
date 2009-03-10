@@ -25,22 +25,22 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   gStyle->SetOptTitle(0);
 
   TH1D* N_sig_pull = new TH1D("N_sig_pull"," ",20, -4., 4.);
-  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 350, 500.);
+  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 0, 70.);
 
-  TH1D* N_eff_sig_pull = new TH1D("N_eff_sig_pull"," ",20, -4., 4.);
-  TH1D* N_eff_sig_err = new TH1D("N_eff_sig_err"," ",50, 350, 500.);
+  TH1D* eff_sig_pull = new TH1D("eff_sig_pull"," ",20, -4., 4.);
+  TH1D* eff_sig_err = new TH1D("eff_sig_err"," ",50, 200, 400.);
 
   TH1D* N_ttbar_pull = new TH1D("N_ttbar_pull"," ",20, -4., 4.);
   TH1D* N_ttbar_err = new TH1D("N_ttbar_err"," ",400, 0., 150.);
 
-  TH1D* N_eff_ttbar_pull = new TH1D("N_eff_ttbar_pull"," ",20, -4., 4.);
-  TH1D* N_eff_ttbar_err = new TH1D("N_eff_ttbar_err"," ",400, 0., 150.);
+  TH1D* eff_ttbar_pull = new TH1D("eff_ttbar_pull"," ",20, -4., 4.);
+  TH1D* eff_ttbar_err = new TH1D("eff_ttbar_err"," ",400, 0., 150.);
 
   TH1D* N_other_pull = new TH1D("N_other_pull"," ",20, -4., 4.);
   TH1D* N_other_err = new TH1D("N_other_err"," ",400, 0., 150.);
 
-  TH1D* N_eff_other_pull = new TH1D("N_eff_other_pull"," ",20, -4., 4.);
-  TH1D* N_eff_other_err = new TH1D("N_eff_other_err"," ",400, 0., 150.);
+  TH1D* eff_other_pull = new TH1D("eff_other_pull"," ",20, -4., 4.);
+  TH1D* eff_other_err = new TH1D("eff_other_err"," ",400, 0., 150.);
 
   gStyle->SetOptFit(1111111);
   TTree* ntp = readtoy(dir,file,varfile);
@@ -48,20 +48,20 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   ntp->Project("N_sig_pull","(N_sig - N_siggen)/N_sigerr","covQual==3");
   ntp->Project("N_sig_err","N_sigerr","covQual==3");
 
-  ntp->Project("N_eff_sig_pull","(N_eff_sig - N_eff_siggen)/N_eff_sigerr","covQual==3");
-  ntp->Project("N_eff_sig_err","N_eff_sigerr","covQual==3");
+  ntp->Project("eff_sig_pull","(eff_sig - eff_siggen)/eff_sigerr","covQual==3");
+  ntp->Project("eff_sig_err","eff_sigerr","covQual==3");
 
   ntp->Project("N_ttbar_pull","(N_ttbar - N_ttbargen)/N_ttbarerr","covQual==3");
   ntp->Project("N_ttbar_err","N_ttbarerr","covQual==3");
 
-  ntp->Project("N_eff_ttbar_pull","(N_eff_ttbar - N_eff_ttbargen)/N_eff_ttbarerr","covQual==3");
-  ntp->Project("N_eff_ttbar_err","N_eff_ttbarerr","covQual==3");
+  ntp->Project("eff_ttbar_pull","(eff_ttbar - eff_ttbargen)/eff_ttbarerr","covQual==3");
+  ntp->Project("eff_ttbar_err","eff_ttbarerr","covQual==3");
 
   ntp->Project("N_other_pull","(N_other - N_othergen)/N_othererr","covQual==3");
   ntp->Project("N_other_err","N_othererr","covQual==3");
 
-  ntp->Project("N_eff_other_pull","(N_eff_other - N_eff_othergen)/N_eff_othererr","covQual==3");
-  ntp->Project("N_eff_other_err","N_eff_othererr","covQual==3");
+  ntp->Project("eff_other_pull","(eff_other - eff_othergen)/eff_othererr","covQual==3");
+  ntp->Project("eff_other_err","eff_othererr","covQual==3");
 
  
   // pull distributions, fitted as Gaussians
@@ -81,9 +81,9 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   pullstring_sig.Append(".eps");
   c1->SaveAs(pullstring_sig);
 
-  N_eff_sig_pull->Fit("gaus");
-  N_eff_sig_pull->GetXaxis()->SetTitle("Pull N_{eff_sig}");
-  TString pullstring_eff_sig(dir+"/N_eff_sig_pull_");
+  eff_sig_pull->Fit("gaus");
+  eff_sig_pull->GetXaxis()->SetTitle("Pull N_{eff_sig}");
+  TString pullstring_eff_sig(dir+"/eff_sig_pull_");
   pullstring_eff_sig.Append(suffix);
   pullstring_eff_sig.Append(".eps");
   c1->SaveAs(pullstring_eff_sig);
@@ -95,9 +95,9 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   pullstring_ttbar.Append(".eps");
   c1->SaveAs(pullstring_ttbar);
 
-  N_eff_ttbar_pull->Fit("gaus");
-  N_eff_ttbar_pull->GetXaxis()->SetTitle("Pull N_{tt bkg}");
-  TString pullstring_eff_ttbar(dir+"/N_eff_ttbar_pull_");
+  eff_ttbar_pull->Fit("gaus");
+  eff_ttbar_pull->GetXaxis()->SetTitle("Pull N_{tt bkg}");
+  TString pullstring_eff_ttbar(dir+"/eff_ttbar_pull_");
   pullstring_eff_ttbar.Append(suffix);
   pullstring_eff_ttbar.Append(".eps");
   c1->SaveAs(pullstring_eff_ttbar);
@@ -109,9 +109,9 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   pullstring_other.Append(".eps");
   c1->SaveAs(pullstring_other);
 
-  N_eff_other_pull->Fit("gaus");
-  N_eff_other_pull->GetXaxis()->SetTitle("Pull N_{eff_other}");
-  TString pullstring_eff_other(dir+"/N_eff_other_pull_");
+  eff_other_pull->Fit("gaus");
+  eff_other_pull->GetXaxis()->SetTitle("Pull N_{eff_other}");
+  TString pullstring_eff_other(dir+"/eff_other_pull_");
   pullstring_eff_other.Append(suffix);
   pullstring_eff_other.Append(".eps");
   c1->SaveAs(pullstring_eff_other);
@@ -128,14 +128,14 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
 
   N_sig_err->GetXaxis()->SetTitle("#sigma(N_{sig})");
   N_sig_err->Draw();
-  TString errstring_sig(dir+"/Wjets/N_sig_err_");
+  TString errstring_sig(dir+"/N_sig_err_");
   errstring_sig.Append(suffix);
   errstring_sig.Append(".eps");
   c2->SaveAs(errstring_sig);
 
-  N_eff_sig_err->GetXaxis()->SetTitle("#eff_sigma(N_{eff_sig})");
-  N_eff_sig_err->Draw();
-  TString errstring_eff_sig(dir+"/Wjets/N_eff_sig_err_");
+  eff_sig_err->GetXaxis()->SetTitle("#eff_sigma(N_{eff_sig})");
+  eff_sig_err->Draw();
+  TString errstring_eff_sig(dir+"/eff_sig_err_");
   errstring_eff_sig.Append(suffix);
   errstring_eff_sig.Append(".eps");
   c2->SaveAs(errstring_eff_sig);
@@ -147,9 +147,9 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   errstring_ttbar.Append(".eps");
   c2->SaveAs(errstring_ttbar);
 
-  N_eff_ttbar_err->GetXaxis()->SetTitle("#sigma(N_{tt})");
-  N_eff_ttbar_err->Draw();
-  TString errstring_eff_ttbar(dir+"/N_eff_ttbar_err_");
+  eff_ttbar_err->GetXaxis()->SetTitle("#sigma(N_{tt})");
+  eff_ttbar_err->Draw();
+  TString errstring_eff_ttbar(dir+"/eff_ttbar_err_");
   errstring_eff_ttbar.Append(suffix);
   errstring_eff_ttbar.Append(".eps");
   c2->SaveAs(errstring_eff_ttbar);
@@ -161,9 +161,9 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   errstring_other.Append(".eps");
   c2->SaveAs(errstring_other);
 
-  N_eff_other_err->GetXaxis()->SetTitle("#sigma(N_{tt})");
-  N_eff_other_err->Draw();
-  TString errstring_eff_other(dir+"/N_eff_other_err_");
+  eff_other_err->GetXaxis()->SetTitle("#sigma(N_{tt})");
+  eff_other_err->Draw();
+  TString errstring_eff_other(dir+"/eff_other_err_");
   errstring_eff_other.Append(suffix);
   errstring_eff_other.Append(".eps");
   c2->SaveAs(errstring_eff_other);
