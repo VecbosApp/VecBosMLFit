@@ -128,7 +128,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
     theFit.getRealPar("N_other")->getVal();
 
   // Generate...
-  RooArgSet genVars(theFit.getObsList(MLStrList("Mt","sinMHTphiJet","BVETO")));
+  RooArgSet genVars(theFit.getObsList(MLStrList("Mt","sinMHTphiJet")));
   MLToyStudy theStudy(theGenerator, genVars, "E", "MTE", 0, theFit.getNoNormVars("myFit"));
   theStudy.addFit(*myPdf);
 
