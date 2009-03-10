@@ -169,7 +169,7 @@ for (my $i = 1; $i <= $njobs; $i++){
     if ($interactive==1) {
 	system("source $iscript");
     } else {
-	system("bsub -q $queue -o $logfile -J $prefix$jetbin\jet-$i < $iscript");
+	system("bsub -q $queue -o $logfile -J $prefix$jetbin$jetflavour-$i < $iscript");
     }
 }
 
