@@ -3,10 +3,11 @@ MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
   opts.addBoolOption("fitCaloJets",     "Fit calojets, trackjets otherwise", kTRUE);
+  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
   opts.addBoolOption("useMass",         "Use Invariant Mass",     kTRUE);        
   opts.addBoolOption("useMHTphiMET",    "Use sin(MHTphiMET)",     kTRUE);
-  opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
-  opts.addBoolOption("ZOnlyFit",        "Fit Z species only",     kTRUE);
+  opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
+  opts.addBoolOption("ZOnlyFit",        "Fit Z species only",     kFALSE);
   opts.addBoolOption("bkgOnlyFit",      "Fit bkg species only",   kFALSE);
 
   return opts;
@@ -26,9 +27,11 @@ void myFit() {
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("mass",  "Mass [GeV/c^{2}]" , 60., 110.);
   RooRealVar* sinMHTphiMET = new RooRealVar("sinMHTphiMET", "sin #phi_{MHT-MET}",-0.85,0.85);
-  
+  RooRealVar* weight = new RooRealVar("evtWeight", "evtWeight",1);
+
   theFit.AddFlatFileColumn(mass);
   theFit.AddFlatFileColumn(sinMHTphiMET);
+  theFit.AddFlatFileColumn(weight);
 
   // define a fit model
   theFit.addModel("myFit", "Ratio ZtoEE");
@@ -66,18 +69,28 @@ void FitZElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/zee_21X-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets/zee_data_21X-%d%s.root",njets,jetflavour);
+  else sprintf(datasetname,"datasets/zee_21X-%d%s.root",njets,jetflavour);
   char treename[100];
+  if(opts.getBoolVal("AllFit")) sprintf(treename,"data");
   if(opts.getBoolVal("ZOnlyFit")) sprintf(treename,"ZjetsMADGRAPH");
   if(opts.getBoolVal("bkgOnlyFit")) sprintf(treename,"other");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
   if(opts.getBoolVal("ZOnlyFit")) data = (RooDataSet*)data->reduce("ZToEEDecay==1");
 
+  // use event weights
+  if(opts.getBoolVal("weightedDataset")) data->setWeightVar("evtWeight");
+
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
   
   // Initialize the fit...
+  if(opts.getBoolVal("AllFit")) {
+    char initconfigfile[200];
+    sprintf(initconfigfile,"fitconfig/fitZ-%d%s.config",njets,jetflavour);
+    theFit.initialize(initconfigfile);
+  }
   if(opts.getBoolVal("ZOnlyFit")) theFit.initialize("shapesZee/config/RatioElectrons-ZjetsFit-Zonly.config");
   if(opts.getBoolVal("bkgOnlyFit")) theFit.initialize("shapesZee/config/RatioElectrons-ZjetsFit-bkgonly.config");
   
@@ -90,12 +103,14 @@ void FitZElectrons(int njets) {
   
   // write the config file corresponding to the fit minimum
   char configfilename[200];
+  if(opts.getBoolVal("AllFit")) sprintf(configfilename, "fitres/fitMinimumZ-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("ZOnlyFit")) sprintf(configfilename, "shapesZee/config/fitMinimum-Zonly-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("bkgOnlyFit")) sprintf(configfilename, "shapesZee/config/fitMinimum-bkgonly-%d%s.config",njets,jetflavour);
   theFit.writeConfigFile(configfilename);  
   
   // save the fit result in ROOT 
   char rootfilename[200];
+  if(opts.getBoolVal("AllFit")) sprintf(rootfilename, "fitres/fitMinimumZ-%d%s.root",njets,jetflavour);
   if(opts.getBoolVal("ZOnlyFit")) sprintf(rootfilename,"shapesZee/root/fitRes-Zonly-%d%s.root",njets,jetflavour);
   if(opts.getBoolVal("bkgOnlyFit")) sprintf(rootfilename,"shapesZee/root/fitRes-bkgonly-%d%s.root",njets,jetflavour);
 
@@ -120,26 +135,36 @@ void PlotZElectrons(int njets, int nbins=19) {
 
   // Load the data
   char datasetname[200];
-  sprintf(datasetname,"datasets/zee_21X-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets/zee_data_21X-%d%s.root",njets,jetflavour);
+  else sprintf(datasetname,"datasets/zee_21X-%d%s.root",njets,jetflavour);
   char treename[100];
+  if(opts.getBoolVal("AllFit")) sprintf(treename,"data");
   if(opts.getBoolVal("ZOnlyFit")) sprintf(treename,"ZjetsMADGRAPH");
   if(opts.getBoolVal("bkgOnlyFit")) sprintf(treename,"other");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
   if(opts.getBoolVal("ZOnlyFit")) data = (RooDataSet*)data->reduce("ZToEEDecay==1");
 
+  bool usePoissonError=true;
+  // use event weights
+  if(opts.getBoolVal("weightedDataset")) {
+    data->setWeightVar("evtWeight");
+    usePoissonError=false;
+  }
+
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
 
   // Initialize the fit...
   char configfilename[200];
+  if(opts.getBoolVal("AllFit")) sprintf(configfilename,"fitres/fitMinimumZ-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("ZOnlyFit")) sprintf(configfilename, "shapesZee/config/fitMinimum-Zonly-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("bkgOnlyFit")) sprintf(configfilename, "shapesZee/config/fitMinimum-bkgonly-%d%s.config",njets,jetflavour);
   theFit.initialize(configfilename);
 
   if(opts.getBoolVal("useMass")) {
     TCanvas *c = new TCanvas("c","fitResult");
-    RooPlot* MassPlot = MakePlot("mass", &theFit, data, nbins);    
+    RooPlot* MassPlot = MakePlot("mass", &theFit, data, nbins,usePoissonError);    
     
     MassPlot->SetAxisColor(1,"x");
     MassPlot->SetLabelColor(1, "X");
@@ -152,6 +177,10 @@ void PlotZElectrons(int njets, int nbins=19) {
     char epsfilename[200];
     char Cfilename[200];
 
+    if(opts.getBoolVal("AllFit")) {
+      sprintf(epsfilename,"fit-plots/eps/Mass-data-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"fit-plots/macro/Mass-data-%d%s.C",njets,jetflavour);
+    }
     if(opts.getBoolVal("ZOnlyFit")) {
       sprintf(epsfilename,"shapesZee/eps/Mass-Zonly-%d%s.eps",njets,jetflavour);
       sprintf(Cfilename,"shapesZee/macro/Mass-Zonly-%d%s.C",njets,jetflavour);
@@ -166,7 +195,7 @@ void PlotZElectrons(int njets, int nbins=19) {
 
   if(opts.getBoolVal("useMHTphiMET")) {
     TCanvas *c = new TCanvas("c","fitResult");
-    RooPlot* AngularPlot = MakePlot("sinMHTphiMET", &theFit, data, nbins);    
+    RooPlot* AngularPlot = MakePlot("sinMHTphiMET", &theFit, data, nbins,usePoissonError);    
     
     AngularPlot->SetAxisColor(1,"x");
     AngularPlot->SetLabelColor(1, "X");
@@ -179,6 +208,10 @@ void PlotZElectrons(int njets, int nbins=19) {
     char epsfilename[200];
     char Cfilename[200];
 
+    if(opts.getBoolVal("AllFit")) {
+      sprintf(epsfilename,"fit-plots/eps/sinMHTphiMET-data-%d%s.eps",njets,jetflavour);
+      sprintf(Cfilename,"fit-plots/macro/sinMHTphiMET-data-%d%s.C",njets,jetflavour);
+    }
     if(opts.getBoolVal("ZOnlyFit")) {
       sprintf(epsfilename,"shapesZee/eps/sinMHTphiMET-Zonly-%d%s.eps",njets,jetflavour);
       sprintf(Cfilename,"shapesZee/macro/sinMHTphiMET-Zonly-%d%s.C",njets,jetflavour);
@@ -218,8 +251,8 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, int nbins
   double Nb = theFit->getRealPar("N_bkg")->getVal();
 
   // plot (dashed) the bkg component
-  //  theFit->getRealPar("N_sig")->setVal(0.);
-  //  thePdf->plotOn(plot, RooFit::Normalization(Nb/(Ns+Nb)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+  theFit->getRealPar("N_sig")->setVal(0.);
+  thePdf->plotOn(plot, RooFit::Normalization(Nb/(Ns+Nb)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
 
   
   return plot;
