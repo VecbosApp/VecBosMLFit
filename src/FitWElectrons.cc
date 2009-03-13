@@ -49,9 +49,9 @@ void myFit() {
   theFit.addModel("myFit", "Ratio WtoENu");
   
   // define species accepted by b veto
-  theFit.addSpecies("myFit", "other_a",  "Accepted Other Bkgs Component");
   theFit.addSpecies("myFit", "sig_a",    "Accepted Signal Component");
   theFit.addSpecies("myFit", "ttbar_a",  "Accepted ttbar Component");
+  theFit.addSpecies("myFit", "other_a",  "Accepted Other Bkgs Component");
 
   // define species rejected by b veto
   theFit.addSpecies("myFit", "sig_r",    "Rejected Signal Component");
@@ -221,7 +221,7 @@ void PlotWElectrons(int njets, int nbins) {
 
   if(opts.getBoolVal("useMt")) {
     TCanvas *c = new TCanvas("c","fitResult");
-    RooPlot* MassPlot = MakePlot("Mt", &theFit, data, nbins, usePoissonError);    
+    RooPlot* MassPlot = MakePlot("Mt", &theFit, data, configfilename, nbins, usePoissonError);    
     
     MassPlot->SetAxisColor(1,"x");
     MassPlot->SetLabelColor(1, "X");
@@ -256,7 +256,7 @@ void PlotWElectrons(int njets, int nbins) {
 
   if(opts.getBoolVal("useMHTphiJet")) {
     TCanvas *c = new TCanvas("c","fitResult");
-    RooPlot* AngularPlot = MakePlot("sinMHTphiJet", &theFit, data, nbins, usePoissonError);    
+    RooPlot* AngularPlot = MakePlot("sinMHTphiJet", &theFit, data, configfilename, nbins, usePoissonError);    
     
     AngularPlot->SetAxisColor(1,"x");
     AngularPlot->SetLabelColor(1, "X");
@@ -294,7 +294,7 @@ void PlotWElectrons(int njets, int nbins) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Make the plot for a given variable
-RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, int nbins, bool poissonError=true)
+RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const char *configfilename, int nbins, bool poissonError=true)
 {
 
   // Various fit options...
@@ -309,22 +309,59 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, int nbins
   if(poissonError)
     theData->plotOn(plot);
   else 
-    theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2) );
+  theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2) );
 
   double Ns = theFit->getRealPar("N_sig")->getVal();
   double Nttbar = theFit->getRealPar("N_ttbar")->getVal();
   double Nother = theFit->getRealPar("N_other")->getVal();
 
+  cout << "Ns = " << Ns << endl; 
+  cout << "Nttbar = " << Nttbar << endl;
+  cout << "Nother = " << Nother << endl;
+  
+  cout << (Nother+Nttbar)/(Nother+Nttbar+Ns) << endl;
+
   // plot the total likelihood
   RooAbsPdf *thePdf = theFit->getPdf("myFit");
   thePdf->plotOn(plot, RooFit::LineColor(kBlack) );
 
-  // plot (dashed) the bkg component
-  theFit->getRealPar("N_sig")->setVal(0.);
-  thePdf->plotOn(plot, RooFit::Normalization((Nttbar+Nother)/(Ns+Nttbar+Nother)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+  // === plot (dashed) the ttbar component ===
+  MLFit theFit2;
 
-  theFit->getRealPar("N_ttbar")->setVal(0.);
-  thePdf->plotOn(plot, RooFit::Normalization(Nother/(Ns+Nttbar+Nother)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDotted));
+  // define the structure of the dataset
+  RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
+  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.85, 0.85);
+
+  theFit2.AddFlatFileColumn(Mt);
+  theFit2.AddFlatFileColumn(sinMHTphiJet);
+
+  // define a fit model
+  theFit2.addModel("ttbarFit", "ttbar Fit");
+  theFit2.addSpecies("ttbarFit", "ttbar", "ttbar Bkg Component");
+  theFit2.addPdfWName("ttbarFit", "ttbar",  "Mt",           "CrystalCruijff",  "ttbar_Mt");
+  theFit2.addPdfWName("ttbarFit", "ttbar",  "sinMHTphiJet", "Cruijff",         "ttbar_sinMHTphiJet");
+
+  RooAbsPdf *myPdf2 = theFit2.buildModel("ttbarFit");
+  theFit2.initialize(configfilename);
+
+  myPdf2->plotOn(plot, RooFit::Normalization(Nttbar/(Ns+Nother+Nttbar)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+
+  // === plot (dashed) the bkg component ===
+  MLFit theFit3;
+
+  theFit3.AddFlatFileColumn(Mt);
+  theFit3.AddFlatFileColumn(sinMHTphiJet);
+
+  // define a fit model
+  theFit3.addModel("otherFit", "other Fit");
+  theFit3.addSpecies("otherFit", "other", "other Bkg Component");
+  theFit3.addPdfWName("otherFit", "other", "Mt",            "CrystalCruijff",  "other_Mt");
+  theFit3.addPdfWName("otherFit", "other", "sinMHTphiJet",  "Cruijff",         "other_sinMHTphiJet");
+
+  RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
+  theFit3.initialize(configfilename);
+
+  myPdf3->plotOn(plot, RooFit::Normalization(Nother/(Ns+Nother+Nttbar)),RooFit::LineColor(kBlack), RooFit::LineStyle(3));
   
   return plot;
 }
