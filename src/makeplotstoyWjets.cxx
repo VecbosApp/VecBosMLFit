@@ -25,10 +25,10 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   gStyle->SetOptTitle(0);
 
   TH1D* N_sig_pull = new TH1D("N_sig_pull"," ",20, -4., 4.);
-  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 0, 70.);
+  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 0, 600.);
 
   TH1D* eff_sig_pull = new TH1D("eff_sig_pull"," ",20, -4., 4.);
-  TH1D* eff_sig_err = new TH1D("eff_sig_err"," ",50, 200, 400.);
+  TH1D* eff_sig_err = new TH1D("eff_sig_err"," ",50, 0, 5.);
 
   TH1D* N_ttbar_pull = new TH1D("N_ttbar_pull"," ",20, -4., 4.);
   TH1D* N_ttbar_err = new TH1D("N_ttbar_err"," ",400, 0., 150.);

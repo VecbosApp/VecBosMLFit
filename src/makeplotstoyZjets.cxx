@@ -26,7 +26,7 @@ void makeplotstoyZjets(TString dir = "./toys", TString file = "resultsZ-1jet.dat
   gStyle->SetOptTitle(0);
 
   TH1D* N_sig_pull = new TH1D("N_sig_pull"," ",20, -4., 4.);
-  TH1D* N_sig_err = new TH1D("N_sig_err"," ",30, 0., 20.);
+  TH1D* N_sig_err = new TH1D("N_sig_err"," ",30, 0., 200.);
 
   TH1D* N_bkg_pull = new TH1D("N_bkg_pull"," ",20, -4., 4.);
   TH1D* N_bkg_err = new TH1D("N_bkg_err"," ",30, 0., 20.);
