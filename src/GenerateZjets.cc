@@ -79,7 +79,6 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
   
   // Initialize the fit...
-  // Initialize the fit...
   char jetflavour[200];
   if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
   else sprintf(jetflavour, "trackjet");
