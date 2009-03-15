@@ -5,6 +5,10 @@
 jetmult=$1
 jetflavour=$2
 
+echo ""
+echo "   [Parameters]   "
+echo ""
+
 grep sig_Mt shapesWenu/config/fitMinimum-Wonly-$jetmult$jetflavour.config 
 echo ""
 grep ttbar_Mt shapesWenu/config/fitMinimum-TTbaronly-$jetmult$jetflavour.config
