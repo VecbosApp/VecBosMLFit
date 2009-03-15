@@ -164,7 +164,7 @@ for (my $i = 1; $i <= $njobs; $i++){
     print SCRIPTFILE ".q\n";
     print SCRIPTFILE "EOF\n";
     print SCRIPTFILE "scp results-*dat -o BatchMode=yes -o StrictHostKeyChecking=no $disklocation\n";
-    print SCRIPTFILE "scp toys/*root $currDir/$directory\n";
+    print SCRIPTFILE "scp toys/*root $disklocation\n";
     system("chmod 777 $iscript");
     if ($interactive==1) {
 	system("source $iscript");
