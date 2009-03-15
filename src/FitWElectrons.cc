@@ -26,23 +26,17 @@ void myFit() {
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
 
-  opts.addBoolOption("useTightBVeto",   "Use Tight B Veto Rectangular Cut", kTRUE);
-  opts.addBoolOption("useMediumBVeto",  "Use Tight B Veto Rectangular Cut", kFALSE);
-  opts.addBoolOption("useLooseBVeto",   "Use Tight B Veto Rectangular Cut", kFALSE);
+  opts.addBoolOption("useBVeto",   "Use Optimized B Veto Rectangular Cut", kTRUE);
   
   // define the structure of the dataset
   RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.85, 0.85);
-  RooRealVar* bvetoTightCat = new RooRealVar("BVetoTightCat", "BVetoTightCat",-1,1);
-  RooRealVar* bvetoMediumCat = new RooRealVar("BVetoMediumCat", "BVetoMediumCat",-1,1);
-  RooRealVar* bvetoLooseCat = new RooRealVar("BVetoLooseCat", "BVetoLooseCat",-1,1);
-  RooRealVar* weight = new RooRealVar("evtWeight", "evtWeight",1);
+  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.80, 0.8);
+  RooRealVar* bvetoCat = new RooRealVar("BVetoCat", "BVetoCat",-1,1);
+  RooRealVar* weight = new RooRealVar("weight", "weight",1);
 
   theFit.AddFlatFileColumn(Mt);
   theFit.AddFlatFileColumn(sinMHTphiJet);
-  theFit.AddFlatFileColumn(bvetoTightCat);
-  theFit.AddFlatFileColumn(bvetoMediumCat);
-  theFit.AddFlatFileColumn(bvetoLooseCat);
+  theFit.AddFlatFileColumn(bvetoCat);
   theFit.AddFlatFileColumn(weight);
 
   // define a fit model
@@ -85,17 +79,13 @@ void myFit() {
   }
 
   // b veto category
-  TString catname = "BVetoTightCat";
-  if(opts.getBoolVal("useMediumBVeto")) catname = "BVetoMediumCat";
-  if(opts.getBoolVal("useLooseBVeto"))  catname = "BVetoLooseCat";
+  theFit.addPdfWName("myFit", "sig_a" ,   "BVetoCat",  "Poly2",  "bveto_acc");
+  theFit.addPdfCopy("myFit",  "ttbar_a",  "BVetoCat",  "sig_a");
+  theFit.addPdfCopy("myFit",  "other_a",  "BVetoCat",  "sig_a");
 
-  theFit.addPdfWName("myFit", "sig_a" ,   catname,  "Poly2",  "bveto_acc");
-  theFit.addPdfCopy("myFit",  "ttbar_a",  catname,  "sig_a");
-  theFit.addPdfCopy("myFit",  "other_a",  catname,  "sig_a");
-
-  theFit.addPdfWName("myFit", "sig_r" ,   catname,  "Poly2",  "bveto_rej");
-  theFit.addPdfCopy("myFit",  "ttbar_r",  catname,  "sig_r");
-  theFit.addPdfCopy("myFit",  "other_r",    catname,  "sig_r");
+  theFit.addPdfWName("myFit", "sig_r" ,   "BVetoCat",  "Poly2",  "bveto_rej");
+  theFit.addPdfCopy("myFit",  "ttbar_r",  "BVetoCat",  "sig_r");
+  theFit.addPdfCopy("myFit",  "other_r",  "BVetoCat",  "sig_r");
 
 }
 
@@ -325,44 +315,48 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
   RooAbsPdf *thePdf = theFit->getPdf("myFit");
   thePdf->plotOn(plot, RooFit::LineColor(kBlack) );
 
-  // === plot (dashed) the ttbar component ===
-  MLFit theFit2;
 
-  // define the structure of the dataset
-  RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.85, 0.85);
+  if(opts.getBoolVal("AllFit")) {
+    // === plot (dashed) the ttbar component ===
+    MLFit theFit2;
 
-  theFit2.AddFlatFileColumn(Mt);
-  theFit2.AddFlatFileColumn(sinMHTphiJet);
+    // define the structure of the dataset
+    RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
+    RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.85, 0.85);
 
-  // define a fit model
-  theFit2.addModel("ttbarFit", "ttbar Fit");
-  theFit2.addSpecies("ttbarFit", "ttbar", "ttbar Bkg Component");
-  theFit2.addPdfWName("ttbarFit", "ttbar",  "Mt",           "CrystalCruijff",  "ttbar_Mt");
-  theFit2.addPdfWName("ttbarFit", "ttbar",  "sinMHTphiJet", "Cruijff",         "ttbar_sinMHTphiJet");
+    theFit2.AddFlatFileColumn(Mt);
+    theFit2.AddFlatFileColumn(sinMHTphiJet);
 
-  RooAbsPdf *myPdf2 = theFit2.buildModel("ttbarFit");
-  theFit2.initialize(configfilename);
+    // define a fit model
+    theFit2.addModel("ttbarFit", "ttbar Fit");
+    theFit2.addSpecies("ttbarFit", "ttbar", "ttbar Bkg Component");
+    theFit2.addPdfWName("ttbarFit", "ttbar",  "Mt",           "CrystalCruijff",  "ttbar_Mt");
+    theFit2.addPdfWName("ttbarFit", "ttbar",  "sinMHTphiJet", "Cruijff",         "ttbar_sinMHTphiJet");
 
-  myPdf2->plotOn(plot, RooFit::Normalization(Nttbar/(Ns+Nother+Nttbar)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+    RooAbsPdf *myPdf2 = theFit2.buildModel("ttbarFit");
+    theFit2.initialize(configfilename);
 
-  // === plot (dashed) the bkg component ===
-  MLFit theFit3;
+    myPdf2->plotOn(plot, RooFit::Normalization(Nttbar/(Ns+Nother+Nttbar)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
 
-  theFit3.AddFlatFileColumn(Mt);
-  theFit3.AddFlatFileColumn(sinMHTphiJet);
+    // === plot (dashed) the bkg component ===
+    MLFit theFit3;
 
-  // define a fit model
-  theFit3.addModel("otherFit", "other Fit");
-  theFit3.addSpecies("otherFit", "other", "other Bkg Component");
-  theFit3.addPdfWName("otherFit", "other", "Mt",            "CrystalCruijff",  "other_Mt");
-  theFit3.addPdfWName("otherFit", "other", "sinMHTphiJet",  "Cruijff",         "other_sinMHTphiJet");
+    theFit3.AddFlatFileColumn(Mt);
+    theFit3.AddFlatFileColumn(sinMHTphiJet);
 
-  RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
-  theFit3.initialize(configfilename);
+    // define a fit model
+    theFit3.addModel("otherFit", "other Fit");
+    theFit3.addSpecies("otherFit", "other", "other Bkg Component");
+    theFit3.addPdfWName("otherFit", "other", "Mt",            "CrystalCruijff",  "other_Mt");
+    theFit3.addPdfWName("otherFit", "other", "sinMHTphiJet",  "Cruijff",         "other_sinMHTphiJet");
 
-  myPdf3->plotOn(plot, RooFit::Normalization(Nother/(Ns+Nother+Nttbar)),RooFit::LineColor(kBlack), RooFit::LineStyle(3));
+    RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
+    theFit3.initialize(configfilename);
+
+    myPdf3->plotOn(plot, RooFit::Normalization(Nother/(Ns+Nother+Nttbar)),RooFit::LineColor(kBlack), RooFit::LineStyle(3));
   
+  }
+
   return plot;
 }
 
