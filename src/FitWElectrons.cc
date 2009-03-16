@@ -30,7 +30,7 @@ void myFit() {
   
   // define the structure of the dataset
   RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.80, 0.8);
+  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.80, 0.80);
   RooRealVar* bvetoCat = new RooRealVar("BVetoCat", "BVetoCat",-1,1);
   RooRealVar* weight = new RooRealVar("weight", "weight",1);
 
@@ -105,7 +105,7 @@ void FitWElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets/wenu_data_21X-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets/wenu_21X_data_%d%s.root",njets,jetflavour);
   else sprintf(datasetname,"datasets/wenu_21X-%d%s.root",njets,jetflavour);
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"data");
@@ -117,7 +117,7 @@ void FitWElectrons(int njets) {
   if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("WToENuDecay==1");
 
   // use event weights
-  if(opts.getBoolVal("weightedDataset")) data->setWeightVar("evtWeight");
+  if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
@@ -175,7 +175,7 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets/wenu_data_21X-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets/wenu_21X_data_%d%s.root",njets,jetflavour);
   else sprintf(datasetname,"datasets/wenu_21X-%d%s.root",njets,jetflavour);
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"data");
@@ -189,7 +189,7 @@ void PlotWElectrons(int njets, int nbins) {
   bool usePoissonError=true;
   // use event weights
   if(opts.getBoolVal("weightedDataset")) {
-    data->setWeightVar("evtWeight");
+    data->setWeightVar("weight");
     usePoissonError=false;
   }
 
@@ -322,7 +322,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
 
     // define the structure of the dataset
     RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-    RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.85, 0.85);
+    RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.80, 0.80);
 
     theFit2.AddFlatFileColumn(Mt);
     theFit2.AddFlatFileColumn(sinMHTphiJet);
