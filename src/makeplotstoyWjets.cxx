@@ -25,7 +25,7 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW-1jet.dat
   gStyle->SetOptTitle(0);
 
   TH1D* N_sig_pull = new TH1D("N_sig_pull"," ",20, -4., 4.);
-  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 0, 600.);
+  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 0, 550.);
 
   TH1D* eff_sig_pull = new TH1D("eff_sig_pull"," ",20, -4., 4.);
   TH1D* eff_sig_err = new TH1D("eff_sig_err"," ",50, 0, 5.);
