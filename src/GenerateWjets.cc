@@ -16,7 +16,7 @@ MLOptions GetDefaultOptions() {
   // Fit configuration
   opts.addBoolOption("fitCaloJets",       "Fit calojets, trackjets otherwise", fitCaloJets);
   opts.addBoolOption("useMt",             "Use W Transverse Mass",  kTRUE);
-  opts.addBoolOption("useMHTphiJet",      "Use MHTphiJet",          kTRUE);
+  opts.addBoolOption("useMHTphiJet",      "Use MHTphiJet",          kFALSE);
   opts.addBoolOption("worstCaseScenario", "Use the same Mt shape for W and ttbar", kFALSE);
 
   return opts;
@@ -49,7 +49,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
 
   // define the structure of the dataset
   RooRealVar* Mt = new RooRealVar("Mt",  "Transverse W Mass [GeV/c^{2}]" , 30., 250.);
-  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet", -0.85, 0.85);
+  RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet", -1.0, 1.0);
   RooRealVar* bvetoCat = new RooRealVar("BVETO", "BVETO",-1,1);
 
   MLFit theFit;

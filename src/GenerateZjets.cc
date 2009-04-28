@@ -16,7 +16,7 @@ MLOptions GetDefaultOptions() {
   // Fit configuration
   opts.addBoolOption("fitCaloJets",       "Fit calojets, trackjets otherwise", fitCaloJets);
   opts.addBoolOption("useMass",           "Use Invariant Mass",     kTRUE);
-  opts.addBoolOption("useMHTphiMET",      "Use sin(MHTphiMET)",     kTRUE);
+  opts.addBoolOption("useMHTphiMET",      "Use sin(MHTphiMET)",     kFALSE);
 
   return opts;
 }
@@ -49,7 +49,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
 
   // define the structure of the dataset
   RooRealVar* mass = new RooRealVar("mass",  "Mass [GeV/c^{2}]" , 60., 110.);
-  RooRealVar* sinMHTphiMET = new RooRealVar("sinMHTphiMET", "sin #phi_{MHT-MET}",-0.85,0.85);
+  RooRealVar* sinMHTphiMET = new RooRealVar("sinMHTphiMET", "sin #phi_{MHT-MET}",-1.0,1.0);
 
   MLFit theFit;
 
