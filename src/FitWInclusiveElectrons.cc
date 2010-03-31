@@ -2,13 +2,13 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
+  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
   opts.addBoolOption("useMt",           "Use W Transverse Mass",  kFALSE);
   opts.addBoolOption("useTcMt",         "Use t.c. W Transverse Mass",  kFALSE);
   opts.addBoolOption("usePfMt",         "Use p.f. W Transverse Mass",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
-  opts.addBoolOption("WOnlyFit",        "Fit W species only",     kTRUE);
-  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kFALSE);
+  opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
+  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kTRUE);
   opts.addBoolOption("otherOnlyFit",    "Fit other species only", kFALSE);
 
   return opts;
@@ -33,7 +33,7 @@ void myFit() {
   RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
   RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
   RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",10.0,500.,"GeV");
+  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",10.0,150.,"GeV");
 
   // other variables
   RooRealVar *weight = new RooRealVar("weight","weight",0,10000);
@@ -70,9 +70,13 @@ void myFit() {
 
   // P.F. Mt PDF
   if(opts.getBoolVal("usePfMt")) {
-    theFit.addPdfWName("myFit", "sig",   "pfmt", "Cruijff", "sig_PfMt");
+    theFit.addPdfWName("myFit", "sig",   "pfmt", "DoubleCruijff", "sig_PfMt");
     theFit.addPdfWName("myFit", "qcd",   "pfmt", "Cruijff", "qcd_PfMt");
     theFit.addPdfWName("myFit", "other", "pfmt", "Cruijff", "other_PfMt");
+
+    theFit.bind(MLStrList("sig_PfMt_mean1","sig_PfMt_mean2"),"sig_PfMt_mean","sig_PfMt_mean");
+    theFit.bind(MLStrList("sig_PfMt_sigmaR1","sig_PfMt_sigmaR2"),"sig_PfMt_sigmaR","sig_PfMt_sigmaR");
+    theFit.bind(MLStrList("sig_PfMt_alphaR1","sig_PfMt_alphaR2"),"sig_PfMt_alphaR","sig_PfMt_alphaR");
   }
 
 }
@@ -335,7 +339,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
     RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
     RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
     RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-    RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",0.0,500.,"GeV");
+    RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",10.0,150.,"GeV");
 
     // other variables
     RooRealVar *weight = new RooRealVar("weight","weight",0,10000);
