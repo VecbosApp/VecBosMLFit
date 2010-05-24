@@ -1,14 +1,25 @@
+// #include <TFile.h>
+
+// #include <RooRealVar.h>
+// #include <RooDataSet.h>
+// #include <RooFitResult.h>
+// #include <RooPlot.h>
+
+// #include <MLFit.hh>
+// #include <MLOptions.hh>
+
 // Set Fit Options
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
+  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
   opts.addBoolOption("useMt",           "Use W Transverse Mass",  kFALSE);
   opts.addBoolOption("useTcMt",         "Use t.c. W Transverse Mass",  kFALSE);
   opts.addBoolOption("usePfMt",         "Use p.f. W Transverse Mass",  kTRUE);
-  opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
+  opts.addBoolOption("usePfMet",        "Use p.f. MET",  kFALSE);
+  opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
   opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
-  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kTRUE);
+  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kFALSE);
   opts.addBoolOption("otherOnlyFit",    "Fit other species only", kFALSE);
 
   return opts;
@@ -33,7 +44,7 @@ void myFit() {
   RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
   RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
   RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",10.0,150.,"GeV");
+  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",20.0,150.,"GeV");
 
   // other variables
   RooRealVar *weight = new RooRealVar("weight","weight",0,10000);
@@ -44,7 +55,7 @@ void myFit() {
   theFit.AddFlatFileColumn(mt);
   theFit.AddFlatFileColumn(tcmt);
   theFit.AddFlatFileColumn(pfmt);
-  theFit.AddFlatFileColumn(weight);
+  //  theFit.AddFlatFileColumn(weight);
 
   // define a fit model
   theFit.addModel("myFit", "Inclusive WtoENu");
@@ -56,9 +67,11 @@ void myFit() {
 
   // Mt PDF
   if(opts.getBoolVal("useMt")) {
-    theFit.addPdfWName("myFit", "sig",   "mt", "Cruijff", "sig_Mt");
-    theFit.addPdfWName("myFit", "qcd",   "mt", "Cruijff", "qcd_Mt");
+    theFit.addPdfWName("myFit", "sig",   "mt", "DoubleCruijff", "sig_Mt");
+    theFit.addPdfWName("myFit", "qcd",   "mt", "DoubleGaussian", "qcd_Mt");
     theFit.addPdfWName("myFit", "other", "mt", "Cruijff", "other_Mt");
+    theFit.bind(MLStrList("sig_Mt_sigmaR1","sig_Mt_sigmaR2"),"sig_Mt_sigmaR","sig_Mt_sigmaR");
+    theFit.bind(MLStrList("sig_Mt_alphaR1","sig_Mt_alphaR2"),"sig_Mt_alphaR","sig_Mt_alphaR");
   }
 
   // T.C. Mt PDF
@@ -74,9 +87,18 @@ void myFit() {
     theFit.addPdfWName("myFit", "qcd",   "pfmt", "Cruijff", "qcd_PfMt");
     theFit.addPdfWName("myFit", "other", "pfmt", "Cruijff", "other_PfMt");
 
-    theFit.bind(MLStrList("sig_PfMt_mean1","sig_PfMt_mean2"),"sig_PfMt_mean","sig_PfMt_mean");
+    //    theFit.bind(MLStrList("sig_PfMt_mean1","sig_PfMt_mean2"),"sig_PfMt_mean","sig_PfMt_mean");
     theFit.bind(MLStrList("sig_PfMt_sigmaR1","sig_PfMt_sigmaR2"),"sig_PfMt_sigmaR","sig_PfMt_sigmaR");
     theFit.bind(MLStrList("sig_PfMt_alphaR1","sig_PfMt_alphaR2"),"sig_PfMt_alphaR","sig_PfMt_alphaR");
+  }
+
+  // Mt PDF
+  if(opts.getBoolVal("usePfMet")) {
+    theFit.addPdfWName("myFit", "sig",   "pfmet", "Cruijff", "sig_PfMet");
+    theFit.addPdfWName("myFit", "qcd",   "pfmet", "DoubleGaussian", "qcd_PfMet");
+    theFit.addPdfWName("myFit", "other", "pfmet", "Cruijff", "other_PfMet");
+
+    theFit.bind(MLStrList("qcd_PfMet_mean1","qcd_PfMet_mean2"),"qcd_PfMet_mean","qcd_PfMet_mean");
   }
 
 }
@@ -93,27 +115,30 @@ void FitWElectrons() {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results/datasets/data_IsolVtx.root");
-  if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets/WJetsMADGRAPH_IsolVtx.root");
-  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets/QCD_IsolVtx.root");
-  if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets/other_IsolVtx.root");
-  theFit.addDataSetFromRootFile("T1", "T1", datasetname);
-  RooDataSet *data = theFit.getDataSet("T1");
+  char treename[100];
+  if(opts.getBoolVal("AllFit")) {
+//     sprintf(datasetname,"toys/gensample.root");
+//     sprintf(treename,"theData");
+    sprintf(datasetname,"results/datasets/data_Wenu.root");
+    sprintf(treename,"T1");
+  } else sprintf(treename,"T1");
+  if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/WJetsMADGRAPH_out-Wenu.root");
+  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/QCD_out-Wenu.root");
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/other_out-Wenu.root");
+  theFit.addDataSetFromRootFile(treename, treename, datasetname);
+  RooDataSet *data = theFit.getDataSet(treename);
+
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
-  // use event weights
+  // use event weights (the ones in the dataset are for 1/pb)
   if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
 
   // build the fit likelihood
   RooAbsPdf *myPdf = theFit.buildModel("myFit");
-  
+
   // Initialize the fit...
-  if(opts.getBoolVal("AllFit")) {
-    char initconfigfile[200];
-    sprintf(initconfigfile,"fitconfig/WInclusive/fit.config");
-    theFit.initialize(initconfigfile);
-  }
+  if(opts.getBoolVal("AllFit")) theFit.initialize("fitconfig/WInclusive/fitW.config");
   if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapes/WInclusive/config/WFit-Wonly.config");
   if(opts.getBoolVal("QCDOnlyFit")) theFit.initialize("shapes/WInclusive/config/WFit-QCDonly.config");
   if(opts.getBoolVal("otherOnlyFit")) theFit.initialize("shapes/WInclusive/config/WFit-otheronly.config");
@@ -122,7 +147,7 @@ void FitWElectrons() {
   myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
   myPdf->getParameters(data)->selectByAttrib("Constant",kFALSE)->Print("V");
   
-  RooFitResult *fitres =  myPdf->fitTo(*data,theFit.getNoNormVars("myFit"),"MHTER");
+  RooFitResult *fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::FitOptions("MHTER"));
   fitres->Print("V");
   
   // write the config file corresponding to the fit minimum
@@ -160,12 +185,19 @@ void PlotWElectrons(int nbins) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results/datasets/data_IsolVtx.root");
-  if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets/WJetsMADGRAPH_IsolVtx.root");
-  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets/QCD_IsolVtx.root");
-  if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets/other_IsolVtx.root");
-  theFit.addDataSetFromRootFile("T1", "T1", datasetname);
-  RooDataSet *data = theFit.getDataSet("T1");
+  char treename[100];
+  if(opts.getBoolVal("AllFit")) { 
+    //    sprintf(datasetname,"toys/gensample.root");
+    //    sprintf(treename,"theData");
+    //    sprintf(datasetname,"results/datasets_unweighted_x2/mockData_out-Wenu.root");
+    sprintf(datasetname,"results/datasets/data_Wenu.root");
+    sprintf(treename,"T1");
+  } else sprintf(treename,"T1");
+  if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/WJetsMADGRAPH_out-Wenu.root");
+  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/QCD_out-Wenu.root");
+  if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/other_out-Wenu.root");
+  theFit.addDataSetFromRootFile(treename, treename, datasetname);
+  RooDataSet *data = theFit.getDataSet(treename);
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
@@ -181,7 +213,7 @@ void PlotWElectrons(int nbins) {
 
   // Initialize the fit...
   char configfilename[200];
-  if(opts.getBoolVal("AllFit")) sprintf(configfilename,"fitres/fitMinimum.config");
+  if(opts.getBoolVal("AllFit")) sprintf(configfilename,"fitres/WInclusive/fitMinimum-data.config");
   if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapes/WInclusive/config/fitMinimum-Wonly.config");
   if(opts.getBoolVal("QCDOnlyFit")) sprintf(configfilename, "shapes/WInclusive/config/fitMinimum-QCDonly.config");
   if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapes/WInclusive/config/fitMinimum-otheronly.config");
@@ -292,6 +324,41 @@ void PlotWElectrons(int nbins) {
     c->SaveAs(Cfilename);
   }
 
+  if(opts.getBoolVal("usePfMet")) {
+    TCanvas *c = new TCanvas("c","fitResult");
+    RooPlot* MassPlot = MakePlot("pfmet", &theFit, data, configfilename, nbins, usePoissonError);    
+    
+    MassPlot->SetAxisColor(1,"x");
+    MassPlot->SetLabelColor(1, "X");
+    MassPlot->SetLabelColor(1, "Y");
+    MassPlot->SetXTitle("p.f. MET [GeV]");
+
+    MassPlot->SetYTitle("Events");
+    MassPlot->Draw();
+
+    char epsfilename[200];
+    char Cfilename[200];
+
+    if(opts.getBoolVal("AllFit")) {
+      sprintf(epsfilename,"fit-plots/eps/PfMet-data.eps");
+      sprintf(Cfilename,"fit-plots/macro/PfMet-data.C");
+    }
+    if(opts.getBoolVal("WOnlyFit")) {
+      sprintf(epsfilename,"shapes/WInclusive/eps/PfMet-Wonly.eps");
+      sprintf(Cfilename,"shapes/WInclusive/macro/PfMet-Wonly.C");
+    }
+    if(opts.getBoolVal("QCDOnlyFit")) {
+      sprintf(epsfilename,"shapes/WInclusive/eps/PfMet-QCDonly.eps");
+      sprintf(Cfilename,"shapes/WInclusive/macro/PfMet-QCDonly.C");
+    }
+    if(opts.getBoolVal("otherOnlyFit")) {
+      sprintf(epsfilename,"shapes/WInclusive/eps/PfMet-otheronly.eps");
+      sprintf(Cfilename,"shapes/WInclusive/macro/PfMet-otheronly.C");
+    }
+    c->SaveAs(epsfilename);
+    c->SaveAs(Cfilename);
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -326,7 +393,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
 
   // plot the total likelihood
   RooAbsPdf *thePdf = theFit->getPdf("myFit");
-  thePdf->plotOn(plot, RooFit::LineColor(kBlack) );
+  thePdf->plotOn(plot, RooFit::LineColor(kBlue) );
 
 
   if(opts.getBoolVal("AllFit")) {
@@ -339,7 +406,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
     RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
     RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
     RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-    RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",10.0,150.,"GeV");
+    RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",20.0,150.,"GeV");
 
     // other variables
     RooRealVar *weight = new RooRealVar("weight","weight",0,10000);
@@ -350,42 +417,46 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
     theFit2.AddFlatFileColumn(mt);
     theFit2.AddFlatFileColumn(tcmt);
     theFit2.AddFlatFileColumn(pfmt);
-    theFit2.AddFlatFileColumn(weight);
+    //    theFit2.AddFlatFileColumn(weight);
 
     // define a fit model
     theFit2.addModel("qcdFit", "qcd Fit");
     theFit2.addSpecies("qcdFit", "qcd", "QCD Bkg Component");
-    if(opts.getBoolVal("useMt"))   theFit2.addPdfWName("qcdFit", "qcd",  "Mt",    "Cruijff",  "qcd_Mt");
-    if(opts.getBoolVal("useTcMt")) theFit2.addPdfWName("qcdFit", "qcd",  "TcMt",  "Cruijff",  "qcd_TcMt");
-    if(opts.getBoolVal("usePfMt")) theFit2.addPdfWName("qcdFit", "qcd",  "PfMt",  "Cruijff",  "qcd_PfMt");
+    if(opts.getBoolVal("useMt"))   theFit2.addPdfWName("qcdFit", "qcd",  "mt",    "DoubleGaussian",  "qcd_Mt");
+    if(opts.getBoolVal("useTcMt")) theFit2.addPdfWName("qcdFit", "qcd",  "tcmt",  "Cruijff",  "qcd_TcMt");
+    if(opts.getBoolVal("usePfMt")) theFit2.addPdfWName("qcdFit", "qcd",  "pfmt",  "Cruijff",  "qcd_PfMt");
 
     RooAbsPdf *myPdf2 = theFit2.buildModel("qcdFit");
     theFit2.initialize(configfilename);
 
-    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/(Ns+Nother+Nqcd)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
 
-    // === plot (dashed) the other component ===
-    MLFit theFit3;
+//     // === plot (red) the signal component ===
+//     MLFit theFit3;
 
-    theFit3.AddFlatFileColumn(met);
-    theFit3.AddFlatFileColumn(tcmet);
-    theFit3.AddFlatFileColumn(pfmet);
-    theFit3.AddFlatFileColumn(mt);
-    theFit3.AddFlatFileColumn(tcmt);
-    theFit3.AddFlatFileColumn(pfmt);
-    theFit3.AddFlatFileColumn(weight);
+//     theFit3.AddFlatFileColumn(met);
+//     theFit3.AddFlatFileColumn(tcmet);
+//     theFit3.AddFlatFileColumn(pfmet);
+//     theFit3.AddFlatFileColumn(mt);
+//     theFit3.AddFlatFileColumn(tcmt);
+//     theFit3.AddFlatFileColumn(pfmt);
+//     theFit3.AddFlatFileColumn(weight);
 
-    // define a fit model
-    theFit3.addModel("otherFit", "other Fit");
-    theFit3.addSpecies("otherFit", "other", "other Bkg Component");
-    if(opts.getBoolVal("useMt"))   theFit3.addPdfWName("qcdFit", "other",  "Mt",    "Cruijff",  "qcd_Mt");
-    if(opts.getBoolVal("useTcMt")) theFit3.addPdfWName("qcdFit", "other",  "TcMt",  "Cruijff",  "qcd_TcMt");
-    if(opts.getBoolVal("usePfMt")) theFit3.addPdfWName("qcdFit", "other",  "PfMt",  "Cruijff",  "qcd_PfMt");
+//     // define a fit model
+//     theFit3.addModel("sigFit", "signal Fit");
+//     theFit3.addSpecies("sigFit", "sig", "Signal Component");
+//     if(opts.getBoolVal("useMt"))   theFit3.addPdfWName("sigFit", "sig",  "mt",    "Cruijff",  "sig_Mt");
+//     if(opts.getBoolVal("useTcMt")) theFit3.addPdfWName("sigFit", "sig",  "tcmt",  "Cruijff",  "sig_TcMt");
+//     if(opts.getBoolVal("usePfMt")) {
+//       theFit3.addPdfWName("sigFit", "sig",  "pfmt",  "DoubleCruijff",  "sig_PfMt");
+//       theFit.bind(MLStrList("sig_PfMt_sigmaR1","sig_PfMt_sigmaR2"),"sig_PfMt_sigmaR","sig_PfMt_sigmaR");
+//       theFit.bind(MLStrList("sig_PfMt_alphaR1","sig_PfMt_alphaR2"),"sig_PfMt_alphaR","sig_PfMt_alphaR");
+//     }
 
-    RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
-    theFit3.initialize(configfilename);
+//     RooAbsPdf *myPdf3 = theFit3.buildModel("sigFit");
+//     theFit3.initialize(configfilename);
 
-    myPdf3->plotOn(plot, RooFit::Normalization(Nother/(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack), RooFit::LineStyle(3));
+//     myPdf3->plotOn(plot, RooFit::Normalization(Ns/(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack), RooFit::LineStyle(3));
   
   }
 
