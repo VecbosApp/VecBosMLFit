@@ -41,7 +41,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
   RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
   RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",10.0,150.,"GeV");
+  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",20.0,150.,"GeV");
 
   MLFit theFit;
 
@@ -80,7 +80,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
     theFit.addPdfWName("myFit", "qcd",   "pfmt", "Cruijff", "qcd_PfMt");
     theFit.addPdfWName("myFit", "other", "pfmt", "Cruijff", "other_PfMt");
 
-    theFit.bind(MLStrList("sig_PfMt_mean1","sig_PfMt_mean2"),"sig_PfMt_mean","sig_PfMt_mean");
+    //    theFit.bind(MLStrList("sig_PfMt_mean1","sig_PfMt_mean2"),"sig_PfMt_mean","sig_PfMt_mean");
     theFit.bind(MLStrList("sig_PfMt_sigmaR1","sig_PfMt_sigmaR2"),"sig_PfMt_sigmaR","sig_PfMt_sigmaR");
     theFit.bind(MLStrList("sig_PfMt_alphaR1","sig_PfMt_alphaR2"),"sig_PfMt_alphaR","sig_PfMt_alphaR");
   }
