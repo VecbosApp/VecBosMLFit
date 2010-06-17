@@ -43,8 +43,9 @@ void myFit() {
   RooRealVar *tcmet = new RooRealVar("tcmet","t.c. E_{T}^{miss}",0.0,500.,"GeV");
   RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
   RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
-  RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-  RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",20.0,150.,"GeV");
+  RooRealVar *tcmt = new RooRealVar("tcmt","m_{T}^{W}",0.0,500.,"GeV");
+  RooRealVar *pfmt = new RooRealVar("pfmt","m_{T}^{W}",20.0,150.,"GeV");
+  RooRealVar *eta = new RooRealVar("eta","electron #eta",-2.5,2.5);
 
   // other variables
   RooRealVar *weight = new RooRealVar("weight","weight",0,10000);
@@ -55,6 +56,7 @@ void myFit() {
   theFit.AddFlatFileColumn(mt);
   theFit.AddFlatFileColumn(tcmt);
   theFit.AddFlatFileColumn(pfmt);
+  theFit.AddFlatFileColumn(eta);
   //  theFit.AddFlatFileColumn(weight);
 
   // define a fit model
@@ -117,9 +119,7 @@ void FitWElectrons() {
   char datasetname[200];
   char treename[100];
   if(opts.getBoolVal("AllFit")) {
-//     sprintf(datasetname,"toys/gensample.root");
-//     sprintf(treename,"theData");
-    sprintf(datasetname,"results/datasets/data_Wenu.root");
+    sprintf(datasetname,"datasets_data/data_Wenu.root");
     sprintf(treename,"T1");
   } else sprintf(treename,"T1");
   if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/WJetsMADGRAPH_out-Wenu.root");
@@ -127,7 +127,8 @@ void FitWElectrons() {
   if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/other_out-Wenu.root");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
-
+  // data = (RooDataSet*)data->reduce("abs(eta)<1.479");
+  
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
@@ -187,10 +188,7 @@ void PlotWElectrons(int nbins) {
   char datasetname[200];
   char treename[100];
   if(opts.getBoolVal("AllFit")) { 
-    //    sprintf(datasetname,"toys/gensample.root");
-    //    sprintf(treename,"theData");
-    //    sprintf(datasetname,"results/datasets_unweighted_x2/mockData_out-Wenu.root");
-    sprintf(datasetname,"results/datasets/data_Wenu.root");
+    sprintf(datasetname,"datasets_data/data_Wenu.root");
     sprintf(treename,"T1");
   } else sprintf(treename,"T1");
   if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/WJetsMADGRAPH_out-Wenu.root");
@@ -198,6 +196,7 @@ void PlotWElectrons(int nbins) {
   if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/other_out-Wenu.root");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
+  // data = (RooDataSet*)data->reduce("abs(eta)<1.479");
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
@@ -296,10 +295,16 @@ void PlotWElectrons(int nbins) {
     MassPlot->SetAxisColor(1,"x");
     MassPlot->SetLabelColor(1, "X");
     MassPlot->SetLabelColor(1, "Y");
-    MassPlot->SetXTitle("p.f. M_{T}[GeV/c^{2}]");
+    MassPlot->SetXTitle("M_{T} [GeV/c^{2}]");
 
-    MassPlot->SetYTitle("Events");
+    MassPlot->SetYTitle("Events / (10 GeV/c^{2})");
     MassPlot->Draw();
+
+    TLatex* t2 = new TLatex(0.6,0.8,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int}=12.3 nb^{-1}}");
+    t2->SetNDC();
+    t2->SetTextSize(0.035);
+    t2->Draw();
+
 
     char epsfilename[200];
     char Cfilename[200];
@@ -393,7 +398,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
 
   // plot the total likelihood
   RooAbsPdf *thePdf = theFit->getPdf("myFit");
-  thePdf->plotOn(plot, RooFit::LineColor(kBlue) );
+  thePdf->plotOn(plot, RooFit::LineColor(kBlack) );
 
 
   if(opts.getBoolVal("AllFit")) {
@@ -406,7 +411,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
     RooRealVar *pfmet = new RooRealVar("pfmet","p.f. E_{T}^{miss}",0.0,500.,"GeV");
     RooRealVar *mt = new RooRealVar("mt","m_{T}^{W}",0.0,500.,"GeV");
     RooRealVar *tcmt = new RooRealVar("tcmt","t.c. m_{T}^{W}",0.0,500.,"GeV");
-    RooRealVar *pfmt = new RooRealVar("pfmt","p.f. m_{T}^{W}",20.0,150.,"GeV");
+    RooRealVar *pfmt = new RooRealVar("pfmt","m_{T}^{W}",20.0,150.,"GeV");
 
     // other variables
     RooRealVar *weight = new RooRealVar("weight","weight",0,10000);
@@ -429,7 +434,7 @@ RooPlot *MakePlot(TString VarName, MLFit* theFit, RooDataSet* theData, const cha
     RooAbsPdf *myPdf2 = theFit2.buildModel("qcdFit");
     theFit2.initialize(configfilename);
 
-    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/(Ns+Nother+Nqcd)),RooFit::LineColor(kRed),RooFit::LineStyle(kDashed));
+    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
 
 //     // === plot (red) the signal component ===
 //     MLFit theFit3;
