@@ -7,10 +7,10 @@ void makeplotstoyWjets(TString dir = "./toys/output/", TString file = "resultsW.
   gStyle->SetOptTitle(0);
 
   TH1D* N_sig_pull = new TH1D("N_sig_pull"," ",20, -4., 4.);
-  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 0, 60.);
+  TH1D* N_sig_err = new TH1D("N_sig_err"," ",50, 10, 30.);
 
-  TH1D* N_ttbar_pull = new TH1D("N_qcd_pull"," ",20, -4., 4.);
-  TH1D* N_ttbar_err = new TH1D("N_qcd_err"," ",400, 0., 150.);
+  TH1D* N_qcd_pull = new TH1D("N_qcd_pull"," ",20, -4., 4.);
+  TH1D* N_qcd_err = new TH1D("N_qcd_err"," ",50, 0., 20.);
 
   TH1D* N_other_pull = new TH1D("N_other_pull"," ",20, -4., 4.);
   TH1D* N_other_err = new TH1D("N_other_err"," ",400, 0., 150.);
@@ -40,7 +40,7 @@ void makeplotstoyWjets(TString dir = "./toys/output/", TString file = "resultsW.
   N_sig_pull->Fit("gaus");
   N_sig_pull->GetXaxis()->SetTitle("Pull N_{sig}");
   TString pullstring_sig(dir+"/N_sig_pull");
-  pullstring_sig.Append(".C");
+  pullstring_sig.Append(".eps");
   c1->SaveAs(pullstring_sig);
 
   N_qcd_pull->Fit("gaus");
@@ -68,10 +68,10 @@ void makeplotstoyWjets(TString dir = "./toys/output/", TString file = "resultsW.
   N_sig_err->GetXaxis()->SetTitle("#sigma(N_{sig})");
   N_sig_err->Draw();
   TString errstring_sig(dir+"/N_sig_err");
-  errstring_sig.Append(".C");
+  errstring_sig.Append(".eps");
   c2->SaveAs(errstring_sig);
 
-  N_qcd_err->GetXaxis()->SetTitle("#sigma(N_{tt})");
+  N_qcd_err->GetXaxis()->SetTitle("#sigma(N_{QCD})");
   N_qcd_err->Draw();
   TString errstring_qcd(dir+"/N_qcd_err");
   errstring_qcd.Append(".eps");
