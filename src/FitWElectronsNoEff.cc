@@ -2,13 +2,14 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kTRUE);
+  opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
-  opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
+  opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
   opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
-  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kTRUE);
+  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kFALSE);
   opts.addBoolOption("otherOnlyFit",    "Fit other species only", kFALSE);
+  opts.addBoolOption("preliminaryLabel", "Add the label with CMS preliminary", kFALSE);
 
   return opts;
 }
@@ -76,7 +77,7 @@ void FitWElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_35X_%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_%d%s.root",njets,jetflavour);
   else sprintf(datasetname,"results/datasetsJets/wenu_33X_%d%s.root",njets,jetflavour);
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
@@ -85,7 +86,8 @@ void FitWElectrons(int njets) {
   if(opts.getBoolVal("otherOnlyFit")) sprintf(treename,"OtherJets");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *dataTot = theFit.getDataSet(treename);
-  RooDataSet *data = (RooDataSet*)dataTot->reduce("event<10000");
+  RooDataSet *data = (RooDataSet*)dataTot->reduce("1==1");
+
 
   // use event weights
   if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
@@ -99,9 +101,15 @@ void FitWElectrons(int njets) {
     sprintf(initconfigfile,"fitconfig/fitW-%d%s.config",njets,jetflavour);
     theFit.initialize(initconfigfile);
   }
-  if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-Wonly.config");
-  if(opts.getBoolVal("QCDOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-QCDonly.config");
-  if(opts.getBoolVal("otherOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-otheronly.config");
+  if(njets==0) {
+    if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapes/WInclusive/config/WFit-Wonly.config");
+    if(opts.getBoolVal("QCDOnlyFit")) theFit.initialize("shapes/WInclusive/config/WFit-QCDonly.config");
+    if(opts.getBoolVal("otherOnlyFit")) theFit.initialize("shapes/WInclusive/config/WFit-otheronly.config");
+  } else {
+    if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-Wonly.config");
+    if(opts.getBoolVal("QCDOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-QCDonly.config");
+    if(opts.getBoolVal("otherOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-otheronly.config");
+  }
 
   // Print Fit configuration 
   myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
@@ -146,7 +154,7 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_35X_%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_%d%s.root",njets,jetflavour);
   else sprintf(datasetname,"results/datasetsJets/wenu_33X_%d%s.root",njets,jetflavour);
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
@@ -155,7 +163,7 @@ void PlotWElectrons(int njets, int nbins) {
   if(opts.getBoolVal("otherOnlyFit")) sprintf(treename,"OtherJets");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *dataTot = theFit.getDataSet(treename);
-  RooDataSet *data = (RooDataSet*)dataTot->reduce("event<10000");
+  RooDataSet *data = (RooDataSet*)dataTot->reduce("1==1");
 
   bool usePoissonError=true;
   // use event weights
@@ -184,13 +192,15 @@ void PlotWElectrons(int njets, int nbins) {
     MassPlot->SetLabelColor(1, "Y");
     MassPlot->SetXTitle("M_{T}[GeV/c^{2}]");
 
-    MassPlot->SetYTitle("Events");
+    MassPlot->SetYTitle("Events/(10 GeV/c^{2})");
     MassPlot->Draw();
 
-//     TLatex* t2 = new TLatex(0.6,0.62,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int}=12 nb^{-1}}");
-//     t2->SetNDC();
-//     t2->SetTextSize(0.05);
-//     t2->Draw();
+    if(opts.getBoolVal("preliminaryLabel")) {
+      TLatex* t2 = new TLatex(0.6,0.85,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int}=12.37 nb^{-1}}");
+      t2->SetNDC();
+      t2->SetTextSize(0.035);
+      t2->Draw();
+    }
  
     char epsfilename[200];
     char Cfilename[200];
@@ -275,7 +285,7 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     RooAbsPdf *myPdf2 = theFit2.buildModel("qcdFit");
     theFit2.initialize(configfilename);
 
-    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/fabs(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
 
     // === plot (dashed) the bkg component ===
     MLFit theFit3;
@@ -296,7 +306,7 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
     theFit3.initialize(configfilename);
 
-    myPdf3->plotOn(plot, RooFit::Normalization(Nother/(Ns+Nother+Nqcd)),RooFit::LineColor(kRed), RooFit::LineStyle(kDashed));
+    myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack), RooFit::LineStyle(kDotted));
   
   }
 
