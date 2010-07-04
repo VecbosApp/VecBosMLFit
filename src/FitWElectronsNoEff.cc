@@ -2,14 +2,14 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
-  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
+  opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kTRUE);
+  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
   opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
   opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kFALSE);
   opts.addBoolOption("otherOnlyFit",    "Fit other species only", kFALSE);
-  opts.addBoolOption("preliminaryLabel", "Add the label with CMS preliminary", kFALSE);
+  opts.addBoolOption("preliminaryLabel", "Add the label with CMS preliminary", kTRUE);
 
   return opts;
 }
@@ -27,7 +27,7 @@ void myFit(int njets) {
   MLOptions opts = GetDefaultOptions();
 
   // define the structure of the dataset
-  RooRealVar* pfmt = new RooRealVar("pfmt",  "M_{T}" , 20., 150., "GeV/c^{2}");
+  RooRealVar* pfmt = new RooRealVar("pfmt",  "M_{T}" , 0., 150., "GeV/c^{2}");
   RooRealVar* weight = new RooRealVar("weight", "weight",1);
 
   theFit.AddFlatFileColumn(pfmt);
@@ -41,7 +41,7 @@ void myFit(int njets) {
   theFit.addSpecies("myFit", "qcd",    "qcd Component");
   theFit.addSpecies("myFit", "other",  "Other Bkgs Component");
 
-  // PfMt PDF
+  // Mt PDF
   if(opts.getBoolVal("usePfMt")) {
 
     if(njets==0) {
@@ -77,11 +77,12 @@ void FitWElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_35X_%d%s.root",njets,jetflavour);
   else sprintf(datasetname,"results/datasetsJets/wenu_33X_%d%s.root",njets,jetflavour);
+  // else sprintf(datasetname,"Toys_WPfMt/Syst_100nb/sigMT/pfmtHigh.root");
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
-  if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WJets");
+  if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"T1");
   if(opts.getBoolVal("QCDOnlyFit")) sprintf(treename,"QCDJets");
   if(opts.getBoolVal("otherOnlyFit")) sprintf(treename,"OtherJets");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
@@ -154,11 +155,12 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_35X_%d%s.root",njets,jetflavour);
   else sprintf(datasetname,"results/datasetsJets/wenu_33X_%d%s.root",njets,jetflavour);
+  // else sprintf(datasetname,"Toys_WPfMt/Syst_100nb/sigMT/pfmtHigh.root");
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
-  if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WJets");
+  if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"T1");
   if(opts.getBoolVal("QCDOnlyFit")) sprintf(treename,"QCDJets");
   if(opts.getBoolVal("otherOnlyFit")) sprintf(treename,"OtherJets");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
@@ -267,7 +269,7 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     MLFit theFit2;
 
     // define the structure of the dataset
-    RooRealVar* PfMt = new RooRealVar("pfmt",  "M_{T}" , 20., 150., "GeV/c^{2}");
+    RooRealVar* PfMt = new RooRealVar("pfmt",  "M_{T}" , 0., 150., "GeV/c^{2}");
     //    RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.80, 0.80);
 
     theFit2.AddFlatFileColumn(PfMt);
