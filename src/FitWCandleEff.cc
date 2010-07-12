@@ -14,6 +14,10 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("isoOnlyEff",       "Fit for N and Isolation eff", kFALSE);
   opts.addBoolOption("idAndIsoEff",      "Fit for N and ID+ISO eff", kFALSE);
 
+  // systematics
+  opts.addBoolOption("systQCDShape",     "QCD antishape fixed and varied for systematics", kFALSE);
+  //  opts.addBoolOption("systAbsScale",     "Sig shape fixed and varied for systematics (MT mean)", kTRUE);
+
   return opts;
 }
 
@@ -22,7 +26,7 @@ MLOptions GetDefaultOptions() {
 
 MLFit theFit;
 
-void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
+void myFit(const char* flagId="isIdWP80", const char* flagIso="", const char* flagIdAndIso="") {
 
   MLFit theFit;
 
@@ -35,29 +39,40 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
 
   RooRealVar *isIdWP70 = new RooRealVar("isIdWP70","isIdWP70",-1,1);
   RooRealVar *isIdWP80 = new RooRealVar("isIdWP80","isIdWP80",-1,1);
-  RooRealVar *isIdWP80modEE = new RooRealVar("isIdWP80modEE","isIdWP80modEE",-1,1);
   RooRealVar *isIdWP85 = new RooRealVar("isIdWP85","isIdWP85",-1,1);
+  RooRealVar *isIdWP90 = new RooRealVar("isIdWP90","isIdWP90",-1,1);
   RooRealVar *isIdWP95 = new RooRealVar("isIdWP95","isIdWP95",-1,1);
 
   RooRealVar *isIsoWP70 = new RooRealVar("isIsoWP70","isIsoWP70",-1,1);
   RooRealVar *isIsoWP80 = new RooRealVar("isIsoWP80","isIsoWP80",-1,1);
-  RooRealVar *isIsoWP80modEE = new RooRealVar("isIsoWP80modEE","isIsoWP80modEE",-1,1);
   RooRealVar *isIsoWP85 = new RooRealVar("isIsoWP85","isIsoWP85",-1,1);
+  RooRealVar *isIsoWP90 = new RooRealVar("isIsoWP90","isIsoWP90",-1,1);
   RooRealVar *isIsoWP95 = new RooRealVar("isIsoWP95","isIsoWP95",-1,1);
+
+  RooRealVar *isWP70 = new RooRealVar("isWP70","isWP70",-1,1);
+  RooRealVar *isWP80 = new RooRealVar("isWP80","isWP80",-1,1);
+  RooRealVar *isWP85 = new RooRealVar("isWP85","isWP85",-1,1);
+  RooRealVar *isWP90 = new RooRealVar("isWP90","isWP90",-1,1);
+  RooRealVar *isWP95 = new RooRealVar("isWP95","isWP95",-1,1);
 
   RooRealVar *eta = new RooRealVar("eta","electron #eta",-2.5,2.5);
 
   theFit.AddFlatFileColumn(pfmt);
   theFit.AddFlatFileColumn(isIdWP70);
   theFit.AddFlatFileColumn(isIdWP80);
-  theFit.AddFlatFileColumn(isIdWP80modEE);
   theFit.AddFlatFileColumn(isIdWP85);
+  theFit.AddFlatFileColumn(isIdWP90);
   theFit.AddFlatFileColumn(isIdWP95);
   theFit.AddFlatFileColumn(isIsoWP70);
   theFit.AddFlatFileColumn(isIsoWP80);
-  theFit.AddFlatFileColumn(isIsoWP80modEE);
   theFit.AddFlatFileColumn(isIsoWP85);
+  theFit.AddFlatFileColumn(isIsoWP90);
   theFit.AddFlatFileColumn(isIsoWP95);
+  theFit.AddFlatFileColumn(isWP70);
+  theFit.AddFlatFileColumn(isWP80);
+  theFit.AddFlatFileColumn(isWP85);
+  theFit.AddFlatFileColumn(isWP90);
+  theFit.AddFlatFileColumn(isWP95);
   theFit.AddFlatFileColumn(eta);
 
   // define a fit model
@@ -112,17 +127,6 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
     theFit.addPdfWName("myFit", "sig_r" ,   "isIdWP70",  "Poly2",  "veto_rej");
     theFit.addPdfCopy("myFit",  "qcd_r",    "isIdWP70",  "sig_r");
     theFit.addPdfCopy("myFit",  "other_r",  "isIdWP70",  "sig_r");
-  } else if(FlagId == TString("isIdWP80modEE")) {
-
-    cout << ">>>>>>>>>>>>>>>>>>>>>   WP80 mod EE >>>>>>>>>>>>>>>>>>" << endl;
-
-    theFit.addPdfWName("myFit", "sig_a" ,   "isIdWP80modEE",  "Poly2",  "veto_acc");
-    theFit.addPdfCopy("myFit",  "qcd_a",    "isIdWP80modEE",  "sig_a");
-    theFit.addPdfCopy("myFit",  "other_a",  "isIdWP80modEE",  "sig_a");
-
-    theFit.addPdfWName("myFit", "sig_r" ,   "isIdWP80modEE",  "Poly2",  "veto_rej");
-    theFit.addPdfCopy("myFit",  "qcd_r",    "isIdWP80modEE",  "sig_r");
-    theFit.addPdfCopy("myFit",  "other_r",  "isIdWP80modEE",  "sig_r");
   } else if(FlagId == TString("isIdWP80")) {
 
     cout << ">>>>>>>>>>>>>>>>>>>>>   WP80 >>>>>>>>>>>>>>>>>>" << endl;
@@ -136,7 +140,6 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
     theFit.addPdfCopy("myFit",  "other_r",  "isIdWP80",  "sig_r");
   } else if(FlagId == TString("isIdWP85")) {
 
-
     cout << ">>>>>>>>>>>>>>>>>>>>>   WP85 >>>>>>>>>>>>>>>>>>" << endl;
 
     theFit.addPdfWName("myFit", "sig_a" ,   "isIdWP85",  "Poly2",  "veto_acc");
@@ -146,6 +149,17 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
     theFit.addPdfWName("myFit", "sig_r" ,   "isIdWP85",  "Poly2",  "veto_rej");
     theFit.addPdfCopy("myFit",  "qcd_r",    "isIdWP85",  "sig_r");
     theFit.addPdfCopy("myFit",  "other_r",  "isIdWP85",  "sig_r");
+  } else if(FlagId == TString("isIdWP90")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>>   WP90 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isIdWP90",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isIdWP90",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isIdWP90",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isIdWP90",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isIdWP90",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isIdWP90",  "sig_r");
   } else if(FlagId == TString("isIdWP95")) {
 
     cout << ">>>>>>>>>>>>>>>>>>>>>   WP95 >>>>>>>>>>>>>>>>>>" << endl;
@@ -182,17 +196,6 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
     theFit.addPdfWName("myFit", "sig_r" ,   "isIsoWP80",  "Poly2",  "veto_rej");
     theFit.addPdfCopy("myFit",  "qcd_r",    "isIsoWP80",  "sig_r");
     theFit.addPdfCopy("myFit",  "other_r",  "isIsoWP80",  "sig_r");
-  } else if(FlagIso == TString("isIsoWP80modEE")) {
-
-    cout << ">>>>>>>>>>>>>>>>>>>>>   Iso WP80modEE >>>>>>>>>>>>>>>>>>" << endl;
-
-    theFit.addPdfWName("myFit", "sig_a" ,   "isIsoWP80modEE",  "Poly2",  "veto_acc");
-    theFit.addPdfCopy("myFit",  "qcd_a",    "isIsoWP80modEE",  "sig_a");
-    theFit.addPdfCopy("myFit",  "other_a",  "isIsoWP80modEE",  "sig_a");
-    
-    theFit.addPdfWName("myFit", "sig_r" ,   "isIsoWP80modEE",  "Poly2",  "veto_rej");
-    theFit.addPdfCopy("myFit",  "qcd_r",    "isIsoWP80modEE",  "sig_r");
-    theFit.addPdfCopy("myFit",  "other_r",  "isIsoWP80modEE",  "sig_r");
   } else if(FlagIso == TString("isIsoWP85")) {
 
     cout << ">>>>>>>>>>>>>>>>>>>>>   Iso WP85 >>>>>>>>>>>>>>>>>>" << endl;
@@ -204,6 +207,17 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
     theFit.addPdfWName("myFit", "sig_r" ,   "isIsoWP85",  "Poly2",  "veto_rej");
     theFit.addPdfCopy("myFit",  "qcd_r",    "isIsoWP85",  "sig_r");
     theFit.addPdfCopy("myFit",  "other_r",  "isIsoWP85",  "sig_r");
+  } else if(FlagId == TString("isIsoWP90")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>>   WP90 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isIsoWP90",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isIsoWP90",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isIsoWP90",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isIsoWP90",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isIsoWP90",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isIsoWP90",  "sig_r");
   } else if(FlagIso == TString("isIsoWP95")) {
 
     cout << ">>>>>>>>>>>>>>>>>>>>>   Iso WP95 >>>>>>>>>>>>>>>>>>" << endl;
@@ -217,14 +231,72 @@ void myFit(const char* flagId="isIdWP80", const char* flagIso="") {
     theFit.addPdfCopy("myFit",  "other_r",  "isIsoWP95",  "sig_r");
   } 
 
+  TString FlagIdAndIso(flagIdAndIso);
+  if(FlagIdAndIso == TString("isWP70")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>> WP70 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isWP70",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isWP70",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isWP70",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isWP70",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isWP70",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isWP70",  "sig_r");
+  } else if(FlagIdAndIso == TString("isWP80")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>>   WP80 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isWP80",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isWP80",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isWP80",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isWP80",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isWP80",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isWP80",  "sig_r");
+  } else if(FlagIdAndIso == TString("isWP85")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>>    WP85 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isWP85",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isWP85",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isWP85",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isWP85",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isWP85",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isWP85",  "sig_r");
+  } else if(FlagIdAndIso == TString("isWP90")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>>   WP90 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isWP90",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isWP90",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isWP90",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isWP90",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isWP90",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isWP90",  "sig_r");
+  } else if(FlagIdAndIso == TString("isWP95")) {
+
+    cout << ">>>>>>>>>>>>>>>>>>>>>    WP95 >>>>>>>>>>>>>>>>>>" << endl;
+
+    theFit.addPdfWName("myFit", "sig_a" ,   "isWP95",  "Poly2",  "veto_acc");
+    theFit.addPdfCopy("myFit",  "qcd_a",    "isWP95",  "sig_a");
+    theFit.addPdfCopy("myFit",  "other_a",  "isWP95",  "sig_a");
+    
+    theFit.addPdfWName("myFit", "sig_r" ,   "isWP95",  "Poly2",  "veto_rej");
+    theFit.addPdfCopy("myFit",  "qcd_r",    "isWP95",  "sig_r");
+    theFit.addPdfCopy("myFit",  "other_r",  "isWP95",  "sig_r");
+  } 
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Fit a sample of Z events
-void FitWElectrons(const char *cut="nJets==0 && pfmet/pt>0.3",const char* flagId="isIdWP80", const char* flagIso="") {
+void FitWElectrons(const char *cut="nJets==0 && pfmet/pt>0.3",const char* flagId="isIdWP80", const char* flagIso="", const char* flagIdAndIso="") {
   
-  myFit(flagId,flagIso);
+  myFit(flagId,flagIso,flagIdAndIso);
 
   // Various fit options...
   MLOptions opts = GetDefaultOptions();
@@ -244,7 +316,6 @@ void FitWElectrons(const char *cut="nJets==0 && pfmet/pt>0.3",const char* flagId
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
   data = (RooDataSet*)data->reduce(cut);
-  
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
@@ -264,8 +335,8 @@ void FitWElectrons(const char *cut="nJets==0 && pfmet/pt>0.3",const char* flagId
   myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
   myPdf->getParameters(data)->selectByAttrib("Constant",kFALSE)->Print("V");
   
-  RooFitResult *fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::FitOptions("MHTER"));
-  //  RooFitResult *fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::Extended(kTRUE),RooFit::Hesse(kTRUE),RooFit::Minos(kTRUE));
+  RooArgSet *minosParameters = myPdf->getParameters(data)->selectByName("eff_sig");
+  RooFitResult *fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::Extended(kTRUE),RooFit::Hesse(kTRUE),RooFit::Minos(*minosParameters),RooFit::Save(kTRUE),RooFit::Timer(kTRUE));
   fitres->Print("V");
   
   // write the config file corresponding to the fit minimum
@@ -294,8 +365,9 @@ void FitWElectrons(const char *cut="nJets==0 && pfmet/pt>0.3",const char* flagId
   
   TString flagIdPrefix(flagId);
   TString flagIsoPrefix(flagIso);
+  TString flagIdAndIsoPrefix(flagIdAndIso);
 
-  TString rootfilenameAllFit(TString("fitres/WInclusive/fitMinimumWCandleWithEff")+cutPrefix+flagIdPrefix+flagIsoPrefix+".root");
+  TString rootfilenameAllFit(TString("fitres/WInclusive/fitMinimumWCandleWithEff")+cutPrefix+flagIdPrefix+flagIsoPrefix+flagIdAndIsoPrefix+".root");
 
   cout << "Writing results in: " << rootfilenameAllFit.Data() << endl;
 
@@ -307,6 +379,34 @@ void FitWElectrons(const char *cut="nJets==0 && pfmet/pt>0.3",const char* flagId
   TFile *file = new TFile(rootfilename,"recreate");
   fitres->Write();
   file->Close();
+
+  // now do the systematics
+  if(opts.getBoolVal("systQCDShape")) {
+
+//     MLStrList paramsToVary("qcd_PfMt_mean","qcd_PfMt_sigmaR","qcd_PfMt_sigmaL",
+//                      "qcd_PfMt_alphaR","qcd_PfMt_alphaL");
+
+    MLStrList paramsToVary("sig_PfMt_mean1");
+    
+    for(int ifit=0; ifit<50; ++ifit) {
+
+      cout << "Running systematic fit n. " << ifit << endl;
+
+      theFit.initialize("fitconfig/WInclusive/fitWCandleWithEff.config");
+
+      theFit.smearConstantParameters(paramsToVary);
+      fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::FitOptions("MHTER"));    
+      fitres->Print("V");
+      
+      char index[20];
+      sprintf(index,"%d",ifit);
+      
+      TString filenameSyst(TString("systres/WInclusive/fitMinimumWCandleWithEff")+cutPrefix+flagIdPrefix+flagIsoPrefix+"_sistfit_"+TString(index)+".root");
+      TFile filesyst(filenameSyst.Data(),"recreate");
+      fitres->Write();
+      filesyst.Close();
+    }
+  }
 
 }
 
