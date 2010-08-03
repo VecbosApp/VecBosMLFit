@@ -198,7 +198,7 @@ void PlotWElectrons(int njets, int nbins) {
     MassPlot->Draw();
 
     if(opts.getBoolVal("preliminaryLabel")) {
-      TLatex* t2 = new TLatex(0.6,0.85,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int}=12.37 nb^{-1}}");
+      TLatex* t2 = new TLatex(0.6,0.85,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int} = 203 nb^{-1}}");
       t2->SetNDC();
       t2->SetTextSize(0.035);
       t2->Draw();
