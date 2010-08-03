@@ -1,13 +1,3 @@
-// #include <TFile.h>
-
-// #include <RooRealVar.h>
-// #include <RooDataSet.h>
-// #include <RooFitResult.h>
-// #include <RooPlot.h>
-
-// #include <MLFit.hh>
-// #include <MLOptions.hh>
-
 // Set Fit Options
 MLOptions GetDefaultOptions() {
   MLOptions opts;
@@ -89,7 +79,6 @@ void myFit() {
     theFit.addPdfWName("myFit", "qcd",   "pfmt", "Cruijff", "qcd_PfMt");
     theFit.addPdfWName("myFit", "other", "pfmt", "Cruijff", "other_PfMt");
 
-    //    theFit.bind(MLStrList("sig_PfMt_mean1","sig_PfMt_mean2"),"sig_PfMt_mean","sig_PfMt_mean");
     theFit.bind(MLStrList("sig_PfMt_sigmaR1","sig_PfMt_sigmaR2"),"sig_PfMt_sigmaR","sig_PfMt_sigmaR");
     theFit.bind(MLStrList("sig_PfMt_alphaR1","sig_PfMt_alphaR2"),"sig_PfMt_alphaR","sig_PfMt_alphaR");
   }
@@ -118,17 +107,14 @@ void FitWElectrons() {
   // Load the data
   char datasetname[200];
   char treename[100];
-  if(opts.getBoolVal("AllFit")) {
-    sprintf(datasetname,"datasets_data/data_Wenu.root");
-    sprintf(treename,"T1");
-  } else sprintf(treename,"T1");
+  sprintf(treename,"T1");
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets_data_WCandle/data_Wenu_WithFlags.root");
   if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/WJetsMADGRAPH_out-Wenu.root");
-  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/QCD_out-Wenu.root");
+  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets/QCD_Wenu.root");
   if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/other_out-Wenu.root");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
-  // data = (RooDataSet*)data->reduce("abs(eta)<1.479");
-  
+  data = (RooDataSet*)data->reduce("isId");
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
@@ -187,16 +173,14 @@ void PlotWElectrons(int nbins) {
   // Load the data
   char datasetname[200];
   char treename[100];
-  if(opts.getBoolVal("AllFit")) { 
-    sprintf(datasetname,"datasets_data/data_Wenu.root");
-    sprintf(treename,"T1");
-  } else sprintf(treename,"T1");
+  sprintf(treename,"T1");
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"datasets_data_WCandle/dataset_eg_Wenu_WithFlags.root");
   if(opts.getBoolVal("WOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/WJetsMADGRAPH_out-Wenu.root");
-  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/QCD_out-Wenu.root");
+  if(opts.getBoolVal("QCDOnlyFit")) sprintf(datasetname,"results/datasets/QCD_Wenu.root");
   if(opts.getBoolVal("otherOnlyFit")) sprintf(datasetname,"results/datasets_unweighted_x5/other_out-Wenu.root");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *data = theFit.getDataSet(treename);
-  // data = (RooDataSet*)data->reduce("abs(eta)<1.479");
+  data = (RooDataSet*)data->reduce("isId");
 
   //  if(opts.getBoolVal("WOnlyFit")) data = (RooDataSet*)data->reduce("promptDecay==1");
 
@@ -300,7 +284,7 @@ void PlotWElectrons(int nbins) {
     MassPlot->SetYTitle("Events / (10 GeV/c^{2})");
     MassPlot->Draw();
 
-    TLatex* t2 = new TLatex(0.6,0.8,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int}=12.3 nb^{-1}}");
+    TLatex* t2 = new TLatex(0.55,0.8,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, Fake L_{int}=100 nb^{-1}}");
     t2->SetNDC();
     t2->SetTextSize(0.035);
     t2->Draw();
