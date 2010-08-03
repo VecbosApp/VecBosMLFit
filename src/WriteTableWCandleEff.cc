@@ -19,20 +19,20 @@ void writeTable(const char *dir, const char *ana = "Id") {
   WPs.push_back("WP95");
 
   cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARLT1.479"); // EB
-  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARLT1.479_AND_etaGT0"); // EB+
-  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARLT1.479_AND_etaLT0"); // EB-
+  //  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARLT1.479_AND_etaGT0"); // EB+
+  //  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARLT1.479_AND_etaLT0"); // EB-
 
   cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARGT1.479"); // EE
-  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARGT1.479_AND_etaGT0"); // EE+
-  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARGT1.479_AND_etaLT0"); // EE-
+  //  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARGT1.479_AND_etaGT0"); // EE+
+  //  cuts.push_back("nJetsEQ0_AND_pfmetOVERptGT0.4_AND_absOPPARetaCLPARGT1.479_AND_etaLT0"); // EE-
   
   std::vector<string> idCuts;
   idCuts.push_back("EB");
-  idCuts.push_back("EB+");
-  idCuts.push_back("EB-");
+  //  idCuts.push_back("EB+");
+  //  idCuts.push_back("EB-");
   idCuts.push_back("EE");
-  idCuts.push_back("EE+");
-  idCuts.push_back("EE-");
+  //  idCuts.push_back("EE+");
+  //  idCuts.push_back("EE-");
 
   cout << "\t NSIG \t EFF SIG \t NQCD \t EFF QCD " << endl;
 
