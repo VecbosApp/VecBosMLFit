@@ -3,6 +3,7 @@ MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
   opts.addBoolOption("usePfMt",           "Use W Transverse Mass",  kTRUE);
+  opts.addBoolOption("recoEff",           "Do the toys for electron reco efficiency",  kTRUE);
 
   return opts;
 }
@@ -76,7 +77,8 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0)
   
   // Initialize the fit...
   char configfilename[200];
-  sprintf(configfilename, "toyconfig/WInclusive/toyWCandleWithEff.config");
+  if(opts.getBoolVal("recoEff")) sprintf(configfilename, "toyconfig/WInclusive/toyWCandleWithEffSC.config");
+  else sprintf(configfilename, "toyconfig/WInclusive/toyWCandleWithEff.config");
 
   theFit.initialize(configfilename);
   MLEffGenerator theGenerator(theFit, "myFit");
