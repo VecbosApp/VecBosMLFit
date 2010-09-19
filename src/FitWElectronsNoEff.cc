@@ -99,7 +99,7 @@ void FitWElectrons(int njets, int ithr) {
   // Initialize the fit...
   if(opts.getBoolVal("AllFit")) {
     char initconfigfile[200];
-    sprintf(initconfigfile,"fitconfig/fitW-%d%s.config",njets,jetflavour);
+    sprintf(initconfigfile,"fitconfig/fitW-%d%s-thr%d.config",njets,jetflavour,ithr);
     theFit.initialize(initconfigfile);
   }
   if(njets==0) {
@@ -194,7 +194,11 @@ void PlotWElectrons(int njets, int ithr, int nbins) {
     MassPlot->SetLabelColor(1, "Y");
     MassPlot->SetXTitle("M_{T}[GeV/c^{2}]");
 
-    MassPlot->SetYTitle("Events/(10 GeV/c^{2})");
+    char binsize[50];
+    Double_t binW = MassPlot->getFitRangeBinW();
+    sprintf(binsize,"%2.0f",binW);
+
+    MassPlot->SetYTitle(TString("Events / (")+TString(binsize)+TString(" GeV/c^{2})"));
     MassPlot->Draw();
 
     makeLegend();
@@ -279,17 +283,20 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     // define a fit model
     theFit2.addModel("qcdFit", "qcd Fit");
     theFit2.addSpecies("qcdFit", "qcd", "qcd Bkg Component");
+    theFit2.addSpecies("qcdFit", "other", "other Bkg Component");
     if(njets==0) {
       theFit2.addPdfWName("qcdFit", "qcd",   "pfmt", "Cruijff", "qcd_PfMt");
+      theFit2.addPdfWName("qcdFit", "other", "pfmt", "Cruijff",  "other_PfMt");
     } else {
       theFit2.addPdfWName("qcdFit", "qcd",  "pfmt", "DoubleGaussian",  "qcd_PfMt");
+      theFit2.addPdfWName("qcdFit", "other", "pfmt", "DoubleCruijff", "other_PfMt");
     }
 
     RooAbsPdf *myPdf2 = theFit2.buildModel("qcdFit");
     theFit2.initialize(configfilename);
 
-    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/fabs(Ns+Nother+Nqcd)), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::MoveToBack() );
-    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/fabs(Ns+Nother+Nqcd)), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2) );
+    myPdf2->plotOn(plot, RooFit::Normalization((Nqcd+Nother)/fabs(Ns+Nother+Nqcd)), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::MoveToBack() );
+    myPdf2->plotOn(plot, RooFit::Normalization((Nqcd+Nother)/fabs(Ns+Nother+Nqcd)), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2) );
 
     // === plot (dashed) the bkg component ===
     MLFit theFit3;
@@ -310,7 +317,7 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
     theFit3.initialize(configfilename);
 
-    myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2));
+    myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineWidth(2));
     myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2));
   
   }
@@ -327,13 +334,13 @@ void makeLegend() {
   // Legend
   TH1F *dataH = new TH1F("dataH","dataH",50,0,150);
   TH1F *totalH = new TH1F("totalH","totalH",50,0,150);
-  TH1F *otherH = new TH1F("otherH","otherH",50,0,150);
+  TH1F *otherPlusQCDH = new TH1F("otherPlusQcdH","otherPlusQcdH",50,0,150);
   TH1F *qcdH = new TH1F("qcdH","qcdH",50,0,150);
 
   dataH->SetMarkerColor(kBlack);
   totalH->SetFillColor(kOrange);
-  otherH->SetFillColor(kOrange+8);
-  qcdH->SetFillColor(kViolet);
+  otherPlusQcdH->SetFillColor(kViolet);
+  qcdH->SetFillColor(kOrange+8);
 
   TLegendEntry *legge;
   TLegend *leg;
@@ -342,8 +349,8 @@ void makeLegend() {
   leg->SetFillColor(0);
   legge = leg->AddEntry(dataH,"Data", "lpe");
   legge = leg->AddEntry(totalH,"total","f");
-  legge = leg->AddEntry(otherH,"EWK","f");
-  legge = leg->AddEntry(qcdH,"QCD","f");
+  legge = leg->AddEntry(otherPlusQcdH,"EWK+QCD","f");
+  legge = leg->AddEntry(qcdH,"EWK","f");
   leg->Draw();
   gPad->Update();
 }
