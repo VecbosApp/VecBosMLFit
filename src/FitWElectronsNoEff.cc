@@ -2,7 +2,7 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
-  opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kTRUE);
+  opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
@@ -64,7 +64,7 @@ void myFit(int njets) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Fit a sample of Z events
-void FitWElectrons(int njets) {
+void FitWElectrons(int njets, int ithr) {
   
   myFit(njets);
 
@@ -77,8 +77,8 @@ void FitWElectrons(int njets) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_35X_%d%s.root",njets,jetflavour);
-  else sprintf(datasetname,"results/datasetsJets/wenu_33X_%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_36X_%d%s_thr%d.root",njets,jetflavour,ithr);
+  else sprintf(datasetname,"results/datasetsJets/wenu_36X_%d%s_thr%d.root",njets,jetflavour,ithr);
   // else sprintf(datasetname,"Toys_WPfMt/Syst_100nb/sigMT/pfmtHigh.root");
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
@@ -121,7 +121,7 @@ void FitWElectrons(int njets) {
   
   // write the config file corresponding to the fit minimum
   char configfilename[200];
-  if(opts.getBoolVal("AllFit")) sprintf(configfilename, "fitres/fitMinimumW-%d%s.config",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(configfilename, "fitres/fitMinimumW-%d%s-thr%d.config",njets,jetflavour,ithr);
   if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("QCDOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-QCDonly-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%d%s.config",njets,jetflavour);
@@ -129,7 +129,7 @@ void FitWElectrons(int njets) {
 
   // save the fit result in ROOT 
   char rootfilename[200];
-  if(opts.getBoolVal("AllFit")) sprintf(rootfilename, "fitres/fitMinimumW-%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(rootfilename, "fitres/fitMinimumW-%d%s-thr%d.root",njets,jetflavour,ithr);
   if(opts.getBoolVal("WOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-Wonly-%d%s.root",njets,jetflavour);
   if(opts.getBoolVal("QCDOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-QCDonly-%d%s.root",njets,jetflavour);
   if(opts.getBoolVal("otherOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-otheronly-%d%s.root",njets,jetflavour);
@@ -142,7 +142,7 @@ void FitWElectrons(int njets) {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void PlotWElectrons(int njets, int nbins) {
+void PlotWElectrons(int njets, int ithr, int nbins) {
 
   myFit(njets);
 
@@ -155,8 +155,8 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_35X_%d%s.root",njets,jetflavour);
-  else sprintf(datasetname,"results/datasetsJets/wenu_33X_%d%s.root",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_36X_%d%s_thr%d.root",njets,jetflavour,ithr);
+  else sprintf(datasetname,"results/datasetsJets/wenu_36X_%d%s_thr%d.root",njets,jetflavour,ithr);
   // else sprintf(datasetname,"Toys_WPfMt/Syst_100nb/sigMT/pfmtHigh.root");
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
@@ -179,7 +179,7 @@ void PlotWElectrons(int njets, int nbins) {
 
   // Initialize the fit...
   char configfilename[200];
-  if(opts.getBoolVal("AllFit")) sprintf(configfilename,"fitres/fitMinimumW-%d%s.config",njets,jetflavour);
+  if(opts.getBoolVal("AllFit")) sprintf(configfilename,"fitres/fitMinimumW-%d%s-thr%d.config",njets,jetflavour,ithr);
   if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("QCDOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-QCDonly-%d%s.config",njets,jetflavour);
   if(opts.getBoolVal("otherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-%d%s.config",njets,jetflavour);
@@ -197,31 +197,37 @@ void PlotWElectrons(int njets, int nbins) {
     MassPlot->SetYTitle("Events/(10 GeV/c^{2})");
     MassPlot->Draw();
 
+    makeLegend();
+
     if(opts.getBoolVal("preliminaryLabel")) {
-      TLatex* t2 = new TLatex(0.6,0.85,"#splitline{CMS Preliminary 2010}{#sqrt{s}=7 TeV, L_{int} = 203 nb^{-1}}");
-      t2->SetNDC();
-      t2->SetTextSize(0.035);
-      t2->Draw();
+      TPaveText pt1(0.1,0.96,0.8,0.98,"NDC");
+      pt1.SetTextFont(72);
+      pt1.SetTextSize(0.03);
+      pt1.SetTextAlign(12);
+      pt1.SetFillColor(0);
+      pt1.SetBorderSize(0);
+      pt1.AddText("CMS Preliminary 2010, #sqrt{s}=7 TeV, L_{int}=2.88 pb^{-1}");
+      pt1.Draw();
     }
  
     char epsfilename[200];
     char Cfilename[200];
 
     if(opts.getBoolVal("AllFit")) {
-      sprintf(epsfilename,"fit-plots/eps/PfMt-data-%d%s.eps",njets,jetflavour);
-      sprintf(Cfilename,"fit-plots/macro/PfMt-data-%d%s.C",njets,jetflavour);
+      sprintf(epsfilename,"fit-plots/eps/PfMt-data-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"fit-plots/macro/PfMt-data-%d%s-thr%d.C",njets,jetflavour,ithr);
     }
     if(opts.getBoolVal("WOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/PfMt-Wonly-%d%s.eps",njets,jetflavour);
-      sprintf(Cfilename,"shapesWenu/macro/PfMt-Wonly-%d%s.C",njets,jetflavour);
+      sprintf(epsfilename,"shapesWenu/eps/PfMt-Wonly-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"shapesWenu/macro/PfMt-Wonly-%d%s-thr%d.C",njets,jetflavour,ithr);
     }
     if(opts.getBoolVal("QCDOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/PfMt-QCDonly-%d%s.eps",njets,jetflavour);
-      sprintf(Cfilename,"shapesWenu/macro/PfMt-QCDonly-%d%s.C",njets,jetflavour);
+      sprintf(epsfilename,"shapesWenu/eps/PfMt-QCDonly-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"shapesWenu/macro/PfMt-QCDonly-%d%s-thr%d.C",njets,jetflavour,ithr);
     }
     if(opts.getBoolVal("otherOnlyFit")) {
-      sprintf(epsfilename,"shapesWenu/eps/PfMt-otheronly-%d%s.eps",njets,jetflavour);
-      sprintf(Cfilename,"shapesWenu/macro/PfMt-otheronly-%d%s.C",njets,jetflavour);
+      sprintf(epsfilename,"shapesWenu/eps/PfMt-otheronly-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"shapesWenu/macro/PfMt-otheronly-%d%s-thr%d.C",njets,jetflavour,ithr);
     }
     c->SaveAs(epsfilename);
     c->SaveAs(Cfilename);
@@ -247,7 +253,7 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
   if(poissonError)
     theData->plotOn(plot);
   else 
-  theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2) );
+    theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2) );
 
   double Ns = theFit->getRealPar("N_sig")->getVal();
   double Nqcd = theFit->getRealPar("N_qcd")->getVal();
@@ -258,11 +264,6 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
   cout << "Nother = " << Nother << endl;
   
   cout << (Nother+Nqcd)/(Nother+Nqcd+Ns) << endl;
-
-  // plot the total likelihood
-  RooAbsPdf *thePdf = theFit->getPdf("myFit");
-  thePdf->plotOn(plot, RooFit::LineColor(kBlack) );
-
 
   if(opts.getBoolVal("AllFit")) {
     // === plot (dashed) the qcd component ===
@@ -287,7 +288,8 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     RooAbsPdf *myPdf2 = theFit2.buildModel("qcdFit");
     theFit2.initialize(configfilename);
 
-    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/fabs(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack),RooFit::LineStyle(kDashed));
+    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/fabs(Ns+Nother+Nqcd)), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::MoveToBack() );
+    myPdf2->plotOn(plot, RooFit::Normalization(Nqcd/fabs(Ns+Nother+Nqcd)), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2) );
 
     // === plot (dashed) the bkg component ===
     MLFit theFit3;
@@ -308,10 +310,40 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
     RooAbsPdf *myPdf3 = theFit3.buildModel("otherFit");
     theFit3.initialize(configfilename);
 
-    myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)),RooFit::LineColor(kBlack), RooFit::LineStyle(kDotted));
+    myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2));
+    myPdf3->plotOn(plot, RooFit::Normalization(Nother/fabs(Ns+Nother+Nqcd)), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2));
   
   }
+
+  // plot the total likelihood
+  RooAbsPdf *thePdf = theFit->getPdf("myFit");
+  thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack() );
+  //  thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2) );
 
   return plot;
 }
 
+void makeLegend() {
+  // Legend
+  TH1F *dataH = new TH1F("dataH","dataH",50,0,150);
+  TH1F *totalH = new TH1F("totalH","totalH",50,0,150);
+  TH1F *otherH = new TH1F("otherH","otherH",50,0,150);
+  TH1F *qcdH = new TH1F("qcdH","qcdH",50,0,150);
+
+  dataH->SetMarkerColor(kBlack);
+  totalH->SetFillColor(kOrange);
+  otherH->SetFillColor(kOrange+8);
+  qcdH->SetFillColor(kViolet);
+
+  TLegendEntry *legge;
+  TLegend *leg;
+  leg = new TLegend(0.6,0.65,0.93,0.8);
+  leg->SetFillStyle(0); leg->SetBorderSize(0.); leg->SetTextSize(0.025);
+  leg->SetFillColor(0);
+  legge = leg->AddEntry(dataH,"Data", "lpe");
+  legge = leg->AddEntry(totalH,"total","f");
+  legge = leg->AddEntry(otherH,"EWK","f");
+  legge = leg->AddEntry(qcdH,"QCD","f");
+  leg->Draw();
+  gPad->Update();
+}
