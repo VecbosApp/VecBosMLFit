@@ -7,6 +7,8 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
   opts.addBoolOption("fitRatio",         "FitRatio directly",kFALSE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
+  opts.addBoolOption("useBTag",         "Use B Tag",  kFALSE);
+  opts.addBoolOption("LFOnly",          "Fit LF only (for W+jets MC)", kFALSE);
   opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
   opts.addBoolOption("WOnlyFit",        "Fit W species only",     kTRUE);
   opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kFALSE);
@@ -32,6 +34,7 @@ void myFit() {
 
   // define the structure of the dataset
   RooRealVar* pfmt = new RooRealVar("pfmt",  "M_{T}" , 20., 150., "GeV/c^{2}");
+  RooRealVar* btag = new RooRealVar("combinedSecondaryVertexBJetTags", "EVT b-tag", 0., 1.);
   RooRealVar* weight = new RooRealVar("weight", "weight",1);
   RooRealVar *njets;
   if(opts.getBoolVal("fitCaloJets")) {
@@ -43,6 +46,7 @@ void myFit() {
   }
 
   theFit.AddFlatFileColumn(pfmt);
+  theFit.AddFlatFileColumn(btag);
   theFit.AddFlatFileColumn(njets);
   theFit.AddFlatFileColumn(weight);
 
@@ -50,14 +54,21 @@ void myFit() {
   theFit.addModel("myFit", "Ratio WtoENu");
 
   // define species
-  MLStrList speclist;
+  MLStrList speclistLF, speclistHF;
   for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++){
-    //signal
-    char speclabel[50],specdesc[200];
-    sprintf(speclabel,"W%dj",nj);
-    sprintf(specdesc,"Signal %dj Component",nj);
+    //signal LF
+    char speclabel[50], specdesc[200];
+    sprintf(speclabel,"W_LF%dj",nj);
+    sprintf(specdesc,"Signal LF %dj Component",nj);
     theFit.addSpecies("myFit", speclabel, specdesc);
-    speclist.Add(speclabel); // exclusive species list ot be transformed in inclusive.
+    speclistLF.Add(speclabel); // exclusive species list ot be transformed in inclusive.
+
+    //signal HF
+    char speclabel[50],specdesc[200];
+    sprintf(speclabel,"W_HF%dj",nj);
+    sprintf(specdesc,"Signal HF %dj Component",nj);
+    theFit.addSpecies("myFit", speclabel, specdesc);
+    speclistHF.Add(speclabel); // exclusive species list ot be transformed in inclusive.
 
     //QCD
     sprintf(speclabel,"qcd%dj",nj);
@@ -70,9 +81,15 @@ void myFit() {
 
   }
  
-  if(opts.getBoolVal("fitRatio"))  theFit.fitInclusiveRatioPoly(speclist, "Wincl",3);
-  else  theFit.fitInclusive( speclist, "Wincl",1);
-  
+  if(opts.getBoolVal("fitRatio"))  {
+    theFit.fitInclusiveRatioPoly(speclistLF, "WinclLF",1);
+    theFit.fitInclusiveRatioPoly(speclistHF, "WinclHF",1);
+  }
+  else { 
+    theFit.fitInclusive( speclistLF, "WinclLF",1);
+    theFit.fitInclusive( speclistHF, "WinclHF",1);
+  }
+
   char jetlabel[200];
   if(opts.getBoolVal("fitCaloJets")) {
     if(opts.getBoolVal("highJetThreshold")) sprintf(jetlabel,"nExclJetsHi");
@@ -82,16 +99,22 @@ void myFit() {
     else sprintf(jetlabel,"nExclPFJetsLo");
   }
 
-  char speclabel[50],pdfname[200];
+  char speclabel[50],pdfname[200],specnameToCopy[200];
   for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++){
     
     // Mt PDF
     if(opts.getBoolVal("usePfMt")) {
       
-      //signal
-      sprintf(speclabel,"W%dj",nj);
-      sprintf(pdfname,"sig_PfMt%dj",nj);   
+      //signal LF
+      sprintf(speclabel,"W_LF%dj",nj);
+      sprintf(pdfname,"sigLF_PfMt%dj",nj);   
       theFit.addPdfWName("myFit", speclabel , "pfmt",  "DoubleCruijff", pdfname );
+
+      //signal HF
+      sprintf(speclabel,"W_HF%dj",nj);
+      sprintf(pdfname,"sigHF_PfMt%dj",nj);   
+      sprintf(specnameToCopy,"W_LF%dj",nj);
+      theFit.addPdfCopy("myFit", speclabel , "pfmt",  specnameToCopy ); // same as W+LF
 
       //QCD
       sprintf(speclabel,"qcd%dj",nj);
@@ -115,10 +138,53 @@ void myFit() {
 
     }
 
+    // EVT b-tag 
+    if(opts.getBoolVal("useBTag")) {
+
+      // used only in the 1/2-jet bin
+      const int nbins = 10;
+      double limitarray[] = {0.0, 0.1, 0.2, 0.3, 0.6, 0.7, 0.8, 0.85, 0.9, 0.95, 1.0 };
+      double limitarrayOther[] = {0.0, 0.15, 0.25, 0.45, 0.80, 0.84, 0.86, 0.90, 0.93, 0.96, 1.0001 };
+
+      TAxis* limits = new TAxis(nbins,limitarray) ;
+      TList args;
+      args.Add(limits);
+
+      TAxis* limitsOther = new TAxis(nbins,limitarrayOther) ;
+      TList argsOther;
+      argsOther.Add(limitsOther);
+
+      //other
+      sprintf(speclabel,"other%dj",nj);
+      sprintf(pdfname,"other_btag%dj",nj);   
+      theFit.addPdfWName("myFit", speclabel , "combinedSecondaryVertexBJetTags",  "BinnedPdf", argsOther, pdfname );
+      
+      // signal LF
+      sprintf(speclabel,"W_LF%dj",nj);
+      sprintf(pdfname,"sigLF_btag%dj",nj);   
+      theFit.addPdfWName("myFit", speclabel , "combinedSecondaryVertexBJetTags",  "BinnedPdf", args, pdfname );
+
+      // signal HF
+      sprintf(speclabel,"W_HF%dj",nj);
+      sprintf(pdfname,"sigHF_btag%dj",nj);   
+      sprintf(specnameToCopy,"other%dj",nj); 
+      theFit.addPdfCopy("myFit", speclabel, "combinedSecondaryVertexBJetTags", specnameToCopy );
+
+      //QCD
+      sprintf(speclabel,"qcd%dj",nj);
+      sprintf(pdfname,"qcd_btag%dj",nj);   
+      theFit.addPdfWName("myFit", speclabel , "combinedSecondaryVertexBJetTags",  "BinnedPdf", args, pdfname );
+
+    }
+    
+
     // jet category
     sprintf(pdfname,"%dj",nj);
 
-    sprintf(speclabel,"W%dj",nj);
+    sprintf(speclabel,"W_LF%dj",nj);
+    theFit.addPdfWName("myFit",speclabel , jetlabel, "ExclJet", pdfname);
+
+    sprintf(speclabel,"W_HF%dj",nj);
     theFit.addPdfWName("myFit",speclabel , jetlabel, "ExclJet", pdfname);
 
     sprintf(speclabel,"qcd%dj",nj);
@@ -168,6 +234,12 @@ void FitWElectrons() {
   std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
   RooDataSet *data = (RooDataSet *)totdata->reduce(cutstring);
 
+  // this can be done only in MC to do the PDFs
+  if(opts.getBoolVal("LFOnly")) { 
+    data = (RooDataSet *)data->reduce("foundMcB < 0.5");
+    std::cout << "===> Reducing data with MC truth information: foundMcB < 0.5" << std::endl; 
+  }
+
   // use event weights
   if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
 
@@ -192,7 +264,7 @@ void FitWElectrons() {
   
   RooFitResult *fitres;
   if(opts.getBoolVal("weightedDataset")) fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::FitOptions("MHTER"),RooFit::SumW2Error(kTRUE),RooFit::NumCPU(4),RooFit::Timer(kTRUE));
-  else fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservabLes(theFit.getNoNormVars("myFit")),RooFit::FitOptions("MHTER"),RooFit::NumCPU(4),RooFit::Timer(kTRUE));
+  else fitres =  myPdf->fitTo(*data,RooFit::ConditionalObservables(theFit.getNoNormVars("myFit")),RooFit::FitOptions("MHTER"),RooFit::NumCPU(4),RooFit::Timer(kTRUE));
   fitres->Print("V");
   
   // write the config file corresponding to the fit minimum
@@ -248,6 +320,12 @@ void PlotWElectrons(int njets, int ithr, int nbins) {
   
   std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
   data = (RooDataSet *)data->reduce(cutstring);
+
+  // this can be done only in MC to do the PDFs
+  if(opts.getBoolVal("LFOnly")) {
+    data = (RooDataSet *)data->reduce("foundMcB < 0.5");
+    std::cout << "===> Reducing data with MC truth information: foundMcB < 0.5" << std::endl; 
+  }
 
   // use event weights
   if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
@@ -312,6 +390,58 @@ void PlotWElectrons(int njets, int ithr, int nbins) {
     if(opts.getBoolVal("otherOnlyFit")) {
       sprintf(epsfilename,"shapesWenu/eps/PfMt-otheronly-%d%s-thr%d.eps",njets,jetflavour,ithr);
       sprintf(Cfilename,"shapesWenu/macro/PfMt-otheronly-%d%s-thr%d.C",njets,jetflavour,ithr);
+    }
+    c->SaveAs(epsfilename);
+    c->SaveAs(Cfilename);
+  }
+
+  if(opts.getBoolVal("useBTag")) {
+    TCanvas *c = new TCanvas("c","fitResult");
+    RooPlot* BTagPlot = MakePlot("combinedSecondaryVertexBJetTags", njets, &theFit, data, configfilename, nbins);    
+    
+    BTagPlot->SetAxisColor(1,"x");
+    BTagPlot->SetLabelColor(1, "X");
+    BTagPlot->SetLabelColor(1, "Y");
+    BTagPlot->SetXTitle("EVT b-tag");
+
+    char binsize[50];
+    Double_t binW = BTagPlot->getFitRangeBinW();
+    sprintf(binsize,"%1.2f",binW);
+
+    BTagPlot->SetYTitle(TString("Events / (")+TString(binsize)+TString(" )"));
+    BTagPlot->Draw();
+
+    makeLegend();
+
+    if(opts.getBoolVal("preliminaryLabel")) {
+      TPaveText pt1(0.1,0.96,0.8,0.98,"NDC");
+      pt1.SetTextFont(72);
+      pt1.SetTextSize(0.03);
+      pt1.SetTextAlign(12);
+      pt1.SetFillColor(0);
+      pt1.SetBorderSize(0);
+      pt1.AddText("CMS Preliminary 2010, #sqrt{s}=7 TeV, L_{int}=2.88 pb^{-1}");
+      pt1.Draw();
+    }
+ 
+    char epsfilename[200];
+    char Cfilename[200];
+
+    if(opts.getBoolVal("AllFit")) {
+      sprintf(epsfilename,"fit-plots/eps/BTag-data-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"fit-plots/macro/BTag-data-%d%s-thr%d.C",njets,jetflavour,ithr);
+    }
+    if(opts.getBoolVal("WOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/BTag-Wonly-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"shapesWenu/macro/BTag-Wonly-%d%s-thr%d.C",njets,jetflavour,ithr);
+    }
+    if(opts.getBoolVal("QCDOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/BTag-QCDonly-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"shapesWenu/macro/BTag-QCDonly-%d%s-thr%d.C",njets,jetflavour,ithr);
+    }
+    if(opts.getBoolVal("otherOnlyFit")) {
+      sprintf(epsfilename,"shapesWenu/eps/BTag-otheronly-%d%s-thr%d.eps",njets,jetflavour,ithr);
+      sprintf(Cfilename,"shapesWenu/macro/BTag-otheronly-%d%s-thr%d.C",njets,jetflavour,ithr);
     }
     c->SaveAs(epsfilename);
     c->SaveAs(Cfilename);
