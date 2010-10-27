@@ -58,10 +58,16 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
     theFit.addSpecies("myFit", speclabel, specdesc);
     speclistHF.Add(speclabel); // exclusive species list ot be transformed in inclusive.
 
-    //QCD
-    sprintf(speclabel,"qcd%dj",nj);
-    sprintf(specdesc,"QCD background %dj Component",nj);
+    // QCD LF
+    sprintf(speclabel,"qcd_LF%dj",nj);
+    sprintf(specdesc,"QCD LF background %dj Component",nj);
     theFit.addSpecies("myFit", speclabel, specdesc);
+
+    // QCD HF
+    sprintf(speclabel,"qcd_HF%dj",nj);
+    sprintf(specdesc,"QCD HF background %dj Component",nj);
+    theFit.addSpecies("myFit", speclabel, specdesc);
+
     //other
     sprintf(speclabel,"other%dj",nj);
     sprintf(specdesc,"Other background %dj Component",nj);
@@ -96,10 +102,16 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
       sprintf(specnameToCopy,"W_LF%dj",nj);
       theFit.addPdfCopy("myFit", speclabel , "pfmt",  specnameToCopy ); // same as W+LF
 
-      //QCD
-      sprintf(speclabel,"qcd%dj",nj);
-      sprintf(pdfname,"qcd_PfMt%dj",nj);   
+      //QCD LF
+      sprintf(speclabel,"qcd_LF%dj",nj);
+      sprintf(pdfname,"qcdLF_PfMt%dj",nj);   
       theFit.addPdfWName("myFit",speclabel  , "pfmt",  "Cruijff",   pdfname);
+
+      //QCD HF
+      sprintf(speclabel,"qcd_HF%dj",nj);
+      sprintf(pdfname,"qcdHF_PfMt%dj",nj);   
+      sprintf(specnameToCopy,"qcd_LF%dj",nj);
+      theFit.addPdfCopy("myFit", speclabel , "pfmt",  specnameToCopy ); // same as QCD+LF
 
       //other
       sprintf(speclabel,"other%dj",nj);
@@ -149,10 +161,16 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
       sprintf(specnameToCopy,"other%dj",nj); 
       theFit.addPdfCopy("myFit", speclabel, "combinedSecondaryVertexBJetTags", specnameToCopy );
 
-      //QCD
-      sprintf(speclabel,"qcd%dj",nj);
-      sprintf(pdfname,"qcd_btag%dj",nj);   
+      //QCD LF
+      sprintf(speclabel,"qcd_LF%dj",nj);
+      sprintf(pdfname,"qcdLF_btag%dj",nj);   
       theFit.addPdfWName("myFit", speclabel , "combinedSecondaryVertexBJetTags",  "BinnedPdf", args, pdfname );
+
+      // QCD HF
+      sprintf(speclabel,"qcd_HF%dj",nj);
+      sprintf(pdfname,"qcdHF_btag%dj",nj);   
+      sprintf(specnameToCopy,"other%dj",nj); 
+      theFit.addPdfCopy("myFit", speclabel, "combinedSecondaryVertexBJetTags", specnameToCopy ); // same as other
 
     }
 
@@ -165,7 +183,10 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
     sprintf(speclabel,"W_HF%dj",nj);
     theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
 
-    sprintf(speclabel,"qcd%dj",nj);
+    sprintf(speclabel,"qcd_LF%dj",nj);
+    theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
+
+    sprintf(speclabel,"qcd_HF%dj",nj);
     theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
 
     sprintf(speclabel,"other%dj",nj);
@@ -195,10 +216,10 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
   Int_t ngen =
     theFit.getRealPar("N_WinclLF1j")->getVal()+
     theFit.getRealPar("N_WinclHF1j")->getVal()+
-    theFit.getRealPar("N_qcd1j")->getVal()+
-    theFit.getRealPar("N_qcd2j")->getVal()+
-    theFit.getRealPar("N_qcd3j")->getVal()+
-    theFit.getRealPar("N_qcd4j")->getVal()+
+    theFit.getRealPar("N_qcd_LF1j")->getVal()+theFit.getRealPar("N_qcd_HF1j")->getVal()+
+    theFit.getRealPar("N_qcd_LF2j")->getVal()+theFit.getRealPar("N_qcd_HF2j")->getVal()+
+    theFit.getRealPar("N_qcd_LF3j")->getVal()+theFit.getRealPar("N_qcd_HF3j")->getVal()+
+    theFit.getRealPar("N_qcd_LF4j")->getVal()+theFit.getRealPar("N_qcd_HF4j")->getVal()+
     theFit.getRealPar("N_other1j")->getVal()+
     theFit.getRealPar("N_other2j")->getVal()+
     theFit.getRealPar("N_other3j")->getVal()+

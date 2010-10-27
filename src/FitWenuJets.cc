@@ -6,15 +6,15 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kTRUE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
   opts.addBoolOption("fitRatio",         "FitRatio directly",kFALSE);
-  opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
-  opts.addBoolOption("useBTag",         "Use B Tag",  kFALSE);
-  opts.addBoolOption("LFOnly",          "Fit LF only (for W+jets MC)", kFALSE);
+  opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kFALSE);
+  opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
+  opts.addBoolOption("LFOnly",          "Fit LF only", kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
-  opts.addBoolOption("WOnlyFit",        "Fit W species only",     kTRUE);
-  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kFALSE);
+  opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
+  opts.addBoolOption("QCDOnlyFit",      "Fit QCD species only",   kTRUE);
   opts.addBoolOption("otherOnlyFit",    "Fit other species only", kFALSE);
-  opts.addRealOption("njetmin",         "smallest jet number to consider", 1);
-  opts.addRealOption("njetmax",         "largest jet number to consider", 1);
+  opts.addRealOption("njetmin",         "smallest jet number to consider", 4);
+  opts.addRealOption("njetmax",         "largest jet number to consider", 4);
   opts.addBoolOption("preliminaryLabel", "Add the label with CMS preliminary", kFALSE);
 
   return opts;
@@ -70,10 +70,16 @@ void myFit() {
     theFit.addSpecies("myFit", speclabel, specdesc);
     speclistHF.Add(speclabel); // exclusive species list ot be transformed in inclusive.
 
-    //QCD
-    sprintf(speclabel,"qcd%dj",nj);
-    sprintf(specdesc,"QCD background %dj Component",nj);
+    // QCD LF
+    sprintf(speclabel,"qcd_LF%dj",nj);
+    sprintf(specdesc,"QCD LF background %dj Component",nj);
     theFit.addSpecies("myFit", speclabel, specdesc);
+
+    // QCD HF
+    sprintf(speclabel,"qcd_HF%dj",nj);
+    sprintf(specdesc,"QCD HF background %dj Component",nj);
+    theFit.addSpecies("myFit", speclabel, specdesc);
+    
     //other
     sprintf(speclabel,"other%dj",nj);
     sprintf(specdesc,"Other background %dj Component",nj);
@@ -86,8 +92,8 @@ void myFit() {
     theFit.fitInclusiveRatioPoly(speclistHF, "WinclHF",1);
   }
   else { 
-    theFit.fitInclusive( speclistLF, "WinclLF",1);
-    theFit.fitInclusive( speclistHF, "WinclHF",1);
+    theFit.fitInclusive( speclistLF, "WinclLF",4);
+    theFit.fitInclusive( speclistHF, "WinclHF",4);
   }
 
   char jetlabel[200];
@@ -116,10 +122,16 @@ void myFit() {
       sprintf(specnameToCopy,"W_LF%dj",nj);
       theFit.addPdfCopy("myFit", speclabel , "pfmt",  specnameToCopy ); // same as W+LF
 
-      //QCD
-      sprintf(speclabel,"qcd%dj",nj);
-      sprintf(pdfname,"qcd_PfMt%dj",nj);   
+      //QCD LF
+      sprintf(speclabel,"qcd_LF%dj",nj);
+      sprintf(pdfname,"qcdLF_PfMt%dj",nj);   
       theFit.addPdfWName("myFit",speclabel  , "pfmt",  "Cruijff",   pdfname);
+
+      //QCD HF
+      sprintf(speclabel,"qcd_HF%dj",nj);
+      sprintf(pdfname,"qcdHF_PfMt%dj",nj);   
+      sprintf(specnameToCopy,"qcd_LF%dj",nj);
+      theFit.addPdfCopy("myFit", speclabel , "pfmt",  specnameToCopy ); // same as QCD+LF
 
       // used only in the 1/2-jet bin
       const int nbins = 10;
@@ -168,12 +180,18 @@ void myFit() {
       sprintf(speclabel,"W_HF%dj",nj);
       sprintf(pdfname,"sigHF_btag%dj",nj);   
       sprintf(specnameToCopy,"other%dj",nj); 
-      theFit.addPdfCopy("myFit", speclabel, "combinedSecondaryVertexBJetTags", specnameToCopy );
+      theFit.addPdfCopy("myFit", speclabel, "combinedSecondaryVertexBJetTags", specnameToCopy ); // same as other
 
-      //QCD
-      sprintf(speclabel,"qcd%dj",nj);
-      sprintf(pdfname,"qcd_btag%dj",nj);   
+      //QCD LF
+      sprintf(speclabel,"qcd_LF%dj",nj);
+      sprintf(pdfname,"qcdLF_btag%dj",nj);   
       theFit.addPdfWName("myFit", speclabel , "combinedSecondaryVertexBJetTags",  "BinnedPdf", args, pdfname );
+
+      // QCD HF
+      sprintf(speclabel,"qcd_HF%dj",nj);
+      sprintf(pdfname,"qcdHF_btag%dj",nj);   
+      sprintf(specnameToCopy,"other%dj",nj); 
+      theFit.addPdfCopy("myFit", speclabel, "combinedSecondaryVertexBJetTags", specnameToCopy ); // same as other
 
     }
     
@@ -187,7 +205,10 @@ void myFit() {
     sprintf(speclabel,"W_HF%dj",nj);
     theFit.addPdfWName("myFit",speclabel , jetlabel, "ExclJet", pdfname);
 
-    sprintf(speclabel,"qcd%dj",nj);
+    sprintf(speclabel,"qcd_LF%dj",nj);
+    theFit.addPdfWName("myFit",speclabel , jetlabel, "ExclJet", pdfname);
+
+    sprintf(speclabel,"qcd_HF%dj",nj);
     theFit.addPdfWName("myFit",speclabel , jetlabel, "ExclJet", pdfname);
 
     sprintf(speclabel,"other%dj",nj);
@@ -538,8 +559,10 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
 
   // plot the total likelihood
   RooAbsPdf *thePdf = theFit->getPdf("myFit");
-  thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
-  thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
+  //  thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
+  //  thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
+  thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
+  thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );
 
 //   char speclabel[50];
 //   sprintf(speclabel,"myFit_qcd%dj,myFit_other%dj",njets);
