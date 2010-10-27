@@ -21,7 +21,7 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW.dat",
 
   char pullstring[50], errstring[50];
   char var[200];
-  for(int nj=njetmin; nj<njetmax; nj++) {
+  for(int nj=njetmin; nj<=njetmax; nj++) {
     sprintf(pullstring,"N_sig_pull_%dj",nj);
     sprintf(errstring,"N_sig_err_%dj",nj);
     N_sig_pull[nj] = new TH1D(pullstring,pullstring, 20, -4.0, 4.0);
@@ -29,10 +29,10 @@ void makeplotstoyWjets(TString dir = "./toys", TString file = "resultsW.dat",
 
     cout << "nj = " << nj << endl; 
 
-    sprintf(var, "(N_Wincl%dj_0 - N_Wincl%djgen)/N_Wincl%djerr_0", nj, nj, nj);
+    sprintf(var, "(N_WinclLF%dj_0 - N_WinclLF%djgen)/N_WinclLF%djerr_0", nj, nj, nj);
     ntp->Project(pullstring, var, "covQual_0==3");
 
-    sprintf(var, "N_Wincl%djerr_0", nj);
+    sprintf(var, "N_WinclLF%djerr_0", nj);
     ntp->Project(errstring, var, "covQual_0==3");
 
     // pulls
