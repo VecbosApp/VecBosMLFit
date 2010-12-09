@@ -4,18 +4,20 @@ MLOptions GetDefaultOptions() {
   // Fit configuration
   opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kTRUE);
-  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kTRUE);
-  opts.addBoolOption("fitRatio",         "FitRatio directly",kFALSE);
+  opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
+  opts.addBoolOption("fitRatio",         "FitRatio directly", kFALSE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useBTag",         "Use B Tag",  kFALSE);
-  opts.addBoolOption("AllFit",          "Fit all species",        kFALSE);
+  opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
   opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
-  opts.addBoolOption("TopOnlyFit",      "Fit Top species only",   kFALSE);
-  opts.addBoolOption("OtherOnlyFit",    "Fit other species only", kTRUE);
-  opts.addRealOption("njetmin",         "smallest jet number to consider", 4);
+  opts.addBoolOption("TopOnlyFit",      "// Fit Top species only",   kFALSE);
+  opts.addBoolOption("OtherOnlyFit",    "Fit other species only", kFALSE);
+  opts.addRealOption("njetmin",         "smallest jet number to consider", 1);
   opts.addRealOption("njetmax",         "largest jet number to consider", 4);
   opts.addRealOption("nb",              "number of MC truth b's in the event (-1 means no requirement)", -1);
-  opts.addBoolOption("preliminaryLabel", "Add the label with CMS preliminary", kFALSE);
+  opts.addBoolOption("barrelOnly",      "barrel only", kFALSE);
+  opts.addBoolOption("endcapOnly",      "endcap only", kFALSE);
+  opts.addBoolOption("preliminaryLabel", "Add the label with CMS preliminary", kTRUE);
 
   return opts;
 }
@@ -84,10 +86,10 @@ void myFit() {
   }
  
   if(opts.getBoolVal("fitRatio"))  {
-    theFit.fitInclusiveRatioPoly(speclist, "Wincl_",opts.getRealVal("njetmax"));
+    theFit.fitInclusiveRatioPoly(speclist, "Wincl_",opts.getRealVal("njetmin"));
   }
   else { 
-    theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmax"));
+    theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmin"));
   }
 
   char jetlabel[200];
@@ -220,8 +222,8 @@ void FitWElectrons() {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_0calojet_thr0.root");
-  else sprintf(datasetname,"results/datasetsJets/wenu_0calojet_thr0.root");
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_0jet_thr0.root");
+  else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
   if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WJets");
@@ -245,6 +247,9 @@ void FitWElectrons() {
      data = (RooDataSet*) data->reduce(bcutstring);
    }
 
+   if(opts.getBoolVal("barrelOnly")) data = (RooDataSet*) data->reduce("ecalsubdet==0");
+   if(opts.getBoolVal("endcapOnly")) data = (RooDataSet*) data->reduce("ecalsubdet==1");
+
    // use event weights
    if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
 
@@ -256,7 +261,8 @@ void FitWElectrons() {
    // Initialize the fit...
    if(opts.getBoolVal("AllFit")) {
      char initconfigfile[200];
-     sprintf(initconfigfile,"fitconfig/fitW-NewBJet-%s-thr%d.config",jetflavour,ithr);
+     sprintf(initconfigfile,"fitconfig/fitW-NewBJet-%s-thr%d-WoBTag.config",jetflavour,ithr);
+     cout << "Using " << initconfigfile << endl;
      theFit.initialize(initconfigfile);
    }
    if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-Wonly-NewBJet.config");
@@ -308,8 +314,8 @@ void FitWElectrons() {
 
    // Load the data
    char datasetname[200];
-   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_0calojet_thr0.root");
-   else sprintf(datasetname,"results/datasetsJets/wenu_0calojet_thr0.root");
+   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_0jet_thr0.root");
+   else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
    char treename[100];
    if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
    if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WJets");
@@ -333,6 +339,9 @@ void FitWElectrons() {
      std::cout << "Reducing with MC truth cut: " << bcutstring << std::endl;
      data = (RooDataSet*) data->reduce(bcutstring);
    }
+
+   if(opts.getBoolVal("barrelOnly")) data = (RooDataSet*) data->reduce("ecalsubdet==0");
+   if(opts.getBoolVal("endcapOnly")) data = (RooDataSet*) data->reduce("ecalsubdet==1");
 
    // use event weights
    if(opts.getBoolVal("weightedDataset")) data->setWeightVar("weight");
@@ -375,7 +384,7 @@ void FitWElectrons() {
        pt1.SetTextAlign(12);
        pt1.SetFillColor(0);
        pt1.SetBorderSize(0);
-       pt1.AddText("CMS Preliminary 2010, #sqrt{s}=7 TeV, L_{int}=2.88 pb^{-1}");
+       pt1.AddText("CMS Preliminary 2010, #sqrt{s}=7 TeV, L_{int}=35 pb^{-1}");
        pt1.Draw();
      }
 
@@ -555,21 +564,23 @@ void FitWElectrons() {
 
    // plot the total likelihood
    RooAbsPdf *thePdf = theFit->getPdf("myFit");
-   //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
-   //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
+   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
+   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
+
+
    //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
    //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets) );
-   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
-   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );
+   //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
+   //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );
 
-//   char speclabel[50];
-//   sprintf(speclabel,"myFit_other%dj,myFit_top%dj",njets);
-//   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::MoveToBack(), RooFit::Slice(*jets) );
-//   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );       
+   char speclabel[1000];
+   sprintf(speclabel,"myFit_other_%dj,myFit_top0b_%dj",njets);
+   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets) );
+   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );       
 
-//   sprintf(speclabel,"myFit_top%dj",njets);
-//   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineWidth(2), RooFit::Slice(*jets));
-//   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
+   sprintf(speclabel,"myFit_top0b_%dj",njets);
+   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets));
+   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
 
   return plot;
 }
@@ -594,7 +605,7 @@ void makeLegend() {
   legge = leg->AddEntry(dataH,"Data", "lpe");
   legge = leg->AddEntry(totalH,"total","f");
   legge = leg->AddEntry(topPlusOtherH,"Top+Other","f");
-  legge = leg->AddEntry(otherH,"Other","f");
+  legge = leg->AddEntry(otherH,"Top","f");
   leg->Draw();
   gPad->Update();
 }
