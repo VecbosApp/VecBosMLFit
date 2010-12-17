@@ -7,11 +7,12 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
   opts.addBoolOption("fitRatio",         "FitRatio directly", kFALSE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
-  opts.addBoolOption("useBTag",         "Use B Tag",  kFALSE);
+  opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
   opts.addBoolOption("WOnlyFit",        "Fit W species only",     kFALSE);
-  opts.addBoolOption("TopOnlyFit",      "// Fit Top species only",   kFALSE);
+  opts.addBoolOption("TopOnlyFit",      "Fit Top species only",   kFALSE);
   opts.addBoolOption("OtherOnlyFit",    "Fit other species only", kFALSE);
+  opts.addBoolOption("TopControlFit",   "Fit the top cntrol sample", kFALSE);
   opts.addRealOption("njetmin",         "smallest jet number to consider", 1);
   opts.addRealOption("njetmax",         "largest jet number to consider", 4);
   opts.addRealOption("nb",              "number of MC truth b's in the event (-1 means no requirement)", -1);
@@ -222,17 +223,20 @@ void FitWElectrons() {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_0jet_thr0.root");
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasets/data_Wenu.root");
   else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
+  // only for the top control sample
+  if(opts.getBoolVal("TopControlFit"))  sprintf(datasetname,"results_data_top/datasets/dataset_ll.root");
   char treename[100];
   if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
   if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WJets");
   if(opts.getBoolVal("OtherOnlyFit")) sprintf(treename,"OtherJets");
   if(opts.getBoolVal("TopOnlyFit")) sprintf(treename,"TopJets");
+  if(opts.getBoolVal("TopControlFit")) sprintf(treename,"T1");
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *totdata = theFit.getDataSet(treename);
    char cutstring[100];
-   if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(pfmt>20) && (%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
+   if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
                                                    opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi" , opts.getRealVal("njetmax"));
    else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",
                 opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" , opts.getRealVal("njetmax"));
@@ -259,15 +263,19 @@ void FitWElectrons() {
    RooAbsPdf *myPdf = theFit.buildModel("myFit");
 
    // Initialize the fit...
+   char initconfigfile[200];
    if(opts.getBoolVal("AllFit")) {
-     char initconfigfile[200];
-     sprintf(initconfigfile,"fitconfig/fitW-NewBJet-%s-thr%d-WoBTag.config",jetflavour,ithr);
+     sprintf(initconfigfile,"fitconfig/fitW-NewBJet-%s-thr%d.config",jetflavour,ithr);
      cout << "Using " << initconfigfile << endl;
      theFit.initialize(initconfigfile);
    }
    if(opts.getBoolVal("WOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-Wonly-NewBJet.config");
    if(opts.getBoolVal("OtherOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-otheronly-NewBJet.config");
    if(opts.getBoolVal("TopOnlyFit")) theFit.initialize("shapesWenu/config/RatioElectrons-WjetsFit-toponly-NewBJet.config");
+   if(opts.getBoolVal("TopControlFit")) {
+     sprintf(initconfigfile,"fitconfig/fitTopControl-NewBJet-%s-thr%d.config",jetflavour,ithr);
+     theFit.initialize(initconfigfile);
+   }
 
    // Print Fit configuration 
    myPdf->getParameters(data)->selectByAttrib("Constant",kTRUE)->Print("V");  
@@ -284,6 +292,7 @@ void FitWElectrons() {
    if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-NewBJet-%s-thr%d.config",jetflavour,ithr);
    if(opts.getBoolVal("OtherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-NewBJet-%s-thr%d.config",jetflavour,ithr);
    if(opts.getBoolVal("TopOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-toponly-NewBJet-%s-thr%d.config",jetflavour,ithr);
+   if(opts.getBoolVal("TopControlFit")) sprintf(configfilename, "fitres/fitMinimumTopControl-NewBJet-%s-thr%d.config",jetflavour,ithr);
    theFit.writeConfigFile(configfilename);  
 
    // save the fit result in ROOT 
@@ -292,6 +301,7 @@ void FitWElectrons() {
    if(opts.getBoolVal("WOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-Wonly-NewBJet-%s-thr%d.root",jetflavour,ithr);
    if(opts.getBoolVal("OtherOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-otheronly-NewBJet-%s-thr%d.root",jetflavour,ithr);
    if(opts.getBoolVal("TopOnlyFit")) sprintf(rootfilename,"shapesWenu/root/fitRes-toponly-NewBJet-%s-thr%d.root",jetflavour,ithr);
+   if(opts.getBoolVal("TopControlFit")) sprintf(rootfilename, "fitres/fitMinimumTopControl-NewBJet-%s-thr%d.root",jetflavour,ithr);
 
    TFile *file = new TFile(rootfilename,"recreate");
    fitres->Write();
@@ -314,17 +324,20 @@ void FitWElectrons() {
 
    // Load the data
    char datasetname[200];
-   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/wenu_0jet_thr0.root");
+   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/data_Wenu.root");
    else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
+   // only for the top control sample
+   if(opts.getBoolVal("TopControlFit"))  sprintf(datasetname,"results_data_top/datasets/dataset_ll.root");
    char treename[100];
    if(opts.getBoolVal("AllFit")) sprintf(treename,"Data");
    if(opts.getBoolVal("WOnlyFit")) sprintf(treename,"WJets");
    if(opts.getBoolVal("OtherOnlyFit")) sprintf(treename,"OtherJets");
    if(opts.getBoolVal("TopOnlyFit")) sprintf(treename,"TopJets");
+   if(opts.getBoolVal("TopControlFit")) sprintf(treename,"T1");
    theFit.addDataSetFromRootFile(treename, treename, datasetname);
    RooDataSet *data = theFit.getDataSet(treename);
    char cutstring[100];
-   if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(pfmt>20) && (%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
+   if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
                                                    njets, opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi", njets);
    else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",
                 njets, opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo", njets);
@@ -357,6 +370,7 @@ void FitWElectrons() {
    if(opts.getBoolVal("WOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-Wonly-NewBJet-%s-thr%d.config",jetflavour,ithr);
    if(opts.getBoolVal("OtherOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-otheronly-NewBJet-%s-thr%d.config",jetflavour,ithr);
    if(opts.getBoolVal("TopOnlyFit")) sprintf(configfilename, "shapesWenu/config/fitMinimum-toponly-NewBJet-%s-thr%d.config",jetflavour,ithr);
+   if(opts.getBoolVal("TopControlFit")) sprintf(configfilename,"fitres/fitMinimumTopControl-NewBJet-%s-thr%d.config",jetflavour,ithr);
    theFit.initialize(configfilename);
 
    if(opts.getBoolVal("usePfMt")) {
@@ -469,6 +483,10 @@ void FitWElectrons() {
          sprintf(Cfilename,"shapesWenu/macro/BTag-toponly-%d%s-thr%d.C",njets,jetflavour,ithr);
        }
      }
+     if(opts.getBoolVal("TopControlFit")) {
+       sprintf(epsfilename,"fit-plots/eps/BTag-dataTopControl-%d%s-thr%d.eps",njets,jetflavour,ithr);
+       sprintf(Cfilename,"fit-plots/macro/BTag-dataTopControl-%d%s-thr%d.C",njets,jetflavour,ithr);
+     }
      c->SaveAs(epsfilename);
      c->SaveAs(Cfilename);
    }
@@ -574,11 +592,11 @@ void FitWElectrons() {
    //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );
 
    char speclabel[1000];
-   sprintf(speclabel,"myFit_other_%dj,myFit_top0b_%dj",njets);
+   sprintf(speclabel,"myFit_other_%dj,myFit_top1b_%dj",njets);
    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets) );
    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );       
 
-   sprintf(speclabel,"myFit_top0b_%dj",njets);
+   sprintf(speclabel,"myFit_top1b_%dj",njets);
    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets));
    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
 
