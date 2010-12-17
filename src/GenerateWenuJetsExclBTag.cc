@@ -4,11 +4,11 @@ MLOptions GetDefaultOptions() {
   // Fit configuration
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kTRUE);
   opts.addBoolOption("fitRatio",         "FitRatio directly",kFALSE);
-  opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
-  opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
-  opts.addRealOption("njetmin",         "smallest jet number to consider", 1);
-  opts.addRealOption("njetmax",         "largest jet number to consider", 4);
-
+  opts.addBoolOption("usePfMt",          "Use W Transverse Mass",  kTRUE);
+  opts.addBoolOption("useBTag",          "Use B Tag",  kTRUE);
+  opts.addRealOption("njetmin",          "smallest jet number to consider", 1);
+  opts.addRealOption("njetmax",          "largest jet number to consider", 4);
+  opts.addBoolOption("MCT",              "do an embedded toy", kTRUE);
   return opts;
 }
 
@@ -32,7 +32,7 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
   // define the structure of the dataset
   RooRealVar* pfmt = new RooRealVar("pfmt",  "M_{T}" , 20., 150., "GeV/c^{2}");
   RooRealVar* nbj = new RooRealVar("nBTagJets", "n_{b-tag jets}", 0.0, 3.0);
-  RooRealVar *njets = new RooRealVar("nJets", "nJets",0.5, 20.5);
+  RooRealVar *njets = new RooRealVar("nExclPFJetsHi", "nExclPFJetsHi",0.5, 20.5);
 
   theFit.AddFlatFileColumn(pfmt);
   theFit.AddFlatFileColumn(nbj);
@@ -114,7 +114,8 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
 
       // signal
       sprintf(speclabel,"W_%dj",nj);
-      sprintf(pdfname,"b0_btag_%dj",nj);   // call W+0 bjets the signal (by definition)
+      //      sprintf(pdfname,"b0_btag_%dj",nj);   // call W+0 bjets the signal (by definition)
+      sprintf(pdfname,"sig_b0_btag_%dj",nj); 
       theFit.addPdfWName("myFit", speclabel , "nBTagJets",  "BtagPdf", pdfname );
       
       // Other
@@ -132,28 +133,51 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
 
       // top
       sprintf(speclabel,"top0b_%dj",nj);
-      sprintf(pdfname,"b0_btag_%dj",nj);
+      //      sprintf(pdfname,"b0_btag_%dj",nj);
+      sprintf(pdfname,"top_b0_btag_%dj",nj);
       theFit.addPdfWName("myFit", speclabel , "nBTagJets",  "BtagPdf", pdfname );
 
       sprintf(speclabel,"top1b_%dj",nj);
-      sprintf(pdfname,"b1_btag_%dj",nj);
+      //      sprintf(pdfname,"b1_btag_%dj",nj);
+      sprintf(pdfname,"top_b1_btag_%dj",nj);
       theFit.addPdfWName("myFit", speclabel , "nBTagJets",  "BtagPdf", pdfname );
 
       sprintf(speclabel,"top2b_%dj",nj);
-      sprintf(pdfname,"b2_btag_%dj",nj);
+      //      sprintf(pdfname,"b2_btag_%dj",nj);
+      sprintf(pdfname,"top_b2_btag_%dj",nj);
       theFit.addPdfWName("myFit", speclabel , "nBTagJets",  "BtagPdf", pdfname );
 
       // tagging and mistag rate are jet properties: unique over jet multiplicities
-      sprintf(effb0,"b0_btag_%dj_eb",nj);
-      sprintf(effb1,"b1_btag_%dj_eb",nj);
-      sprintf(effb2,"b2_btag_%dj_eb",nj);
-      sprintf(effnob0,"b0_btag_%dj_enob",nj);
-      sprintf(effnob1,"b1_btag_%dj_enob",nj);
-      sprintf(effnob2,"b2_btag_%dj_enob",nj);
+//       sprintf(effb0,"b0_btag_%dj_eb",nj);
+//       sprintf(effb1,"b1_btag_%dj_eb",nj);
+//       sprintf(effb2,"b2_btag_%dj_eb",nj);
+//       sprintf(effnob0,"b0_btag_%dj_enob",nj);
+//       sprintf(effnob1,"b1_btag_%dj_enob",nj);
+//       sprintf(effnob2,"b2_btag_%dj_enob",nj);
 
-      theFit.bind(MLStrList(effb0,effb1,effb2),"btag_eb","btag_eb");
-      theFit.bind(MLStrList(effnob0,effnob1,effnob2),"btag_enob","btag_enob");
+//       theFit.bind(MLStrList(effb0,effb1,effb2),"btag_eb","btag_eb");
+//       theFit.bind(MLStrList(effnob0,effnob1,effnob2),"btag_enob","btag_enob");
 
+      sprintf(effb0,"sig_b0_btag_%dj_eb",nj);
+      sprintf(effb1,"sig_b1_btag_%dj_eb",nj);
+      sprintf(effb2,"sig_b2_btag_%dj_eb",nj);
+      sprintf(effnob0,"sig_b0_btag_%dj_enob",nj);
+      sprintf(effnob1,"sig_b1_btag_%dj_enob",nj);
+      sprintf(effnob2,"sig_b2_btag_%dj_enob",nj);
+
+      theFit.bind(MLStrList(effb0,effb1,effb2),"sig_btag_eb","sig_btag_eb");
+      theFit.bind(MLStrList(effnob0,effnob1,effnob2),"sig_btag_enob","sig_btag_enob");
+
+      sprintf(effb0,"top_b0_btag_%dj_eb",nj);
+      sprintf(effb1,"top_b1_btag_%dj_eb",nj);
+      sprintf(effb2,"top_b2_btag_%dj_eb",nj);
+      sprintf(effnob0,"top_b0_btag_%dj_enob",nj);
+      sprintf(effnob1,"top_b1_btag_%dj_enob",nj);
+      sprintf(effnob2,"top_b2_btag_%dj_enob",nj);
+
+      theFit.bind(MLStrList(effb0,effb1,effb2),"top_btag_eb","top_btag_eb");
+      theFit.bind(MLStrList(effnob0,effnob1,effnob2),"top_btag_enob","top_btag_enob");
+ 
     }
     
   
@@ -161,19 +185,19 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
     sprintf(pdfname,"%dj",nj);
 
     sprintf(speclabel,"W_%dj",nj);
-    theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
+    theFit.addPdfWName("myFit",speclabel , "nExclPFJetsHi", "ExclJet", pdfname);
 
     sprintf(speclabel,"other_%dj",nj);
-    theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
+    theFit.addPdfWName("myFit",speclabel , "nExclPFJetsHi", "ExclJet", pdfname);
 
     sprintf(speclabel,"top0b_%dj",nj);
-    theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
+    theFit.addPdfWName("myFit",speclabel , "nExclPFJetsHi", "ExclJet", pdfname);
 
     sprintf(speclabel,"top1b_%dj",nj);
-    theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
+    theFit.addPdfWName("myFit",speclabel , "nExclPFJetsHi", "ExclJet", pdfname);
 
     sprintf(speclabel,"top2b_%dj",nj);
-    theFit.addPdfWName("myFit",speclabel , "nJets", "ExclJet", pdfname);
+    theFit.addPdfWName("myFit",speclabel , "nExclPFJetsHi", "ExclJet", pdfname);
 
   }
 
@@ -203,8 +227,17 @@ void Generate(Int_t nexp = 1, UInt_t iseed = 65539, char* outfile= 0) {
     theFit.getRealPar("N_top2b_1j")->getVal()+theFit.getRealPar("N_top2b_2j")->getVal()+theFit.getRealPar("N_top2b_3j")->getVal()+theFit.getRealPar("N_top2b_4j")->getVal();
   
   // Generate...
-  RooArgSet genVars(theFit.getObsList(MLStrList("pfmt","nBTagJets","nJets")));
+  RooArgSet genVars(theFit.getObsList(MLStrList("pfmt","nBTagJets","nExclPFJetsHi")));
   MLToyStudy theStudy(theGenerator, genVars, "E", "MTE", 0, theFit.getNoNormVars("myFit"));
+  if(opts.getBoolVal("MCT")) {
+    char speclabel[50];
+    for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++) {
+      for(int nb=0; nb<3; nb++) {
+        sprintf(speclabel,"top%db_%dj",nb,nj);
+        theStudy.addMockSpecies(speclabel,"mockFinal.root",speclabel);
+      }
+    }
+  }
   theStudy.addFit(*myPdf);
 
   theStudy.generateAndFit(nexp,ngen);
