@@ -87,7 +87,7 @@ void myFit() {
   }
  
   if(opts.getBoolVal("fitRatio"))  {
-    theFit.fitInclusiveRatioPoly(speclist, "Wincl_",opts.getRealVal("njetmin"));
+    theFit.fitInclusiveRatio(speclist, "Wincl",opts.getRealVal("njetmin"));
   }
   else { 
     theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmin"));
@@ -324,7 +324,7 @@ void FitWElectrons() {
 
    // Load the data
    char datasetname[200];
-   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/data_Wenu.root");
+   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasets/data_Wenu.root");
    else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
    // only for the top control sample
    if(opts.getBoolVal("TopControlFit"))  sprintf(datasetname,"results_data_top/datasets/dataset_ll.root");
