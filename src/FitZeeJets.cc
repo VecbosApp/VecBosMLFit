@@ -4,12 +4,14 @@ MLOptions GetDefaultOptions() {
   MLOptions opts;
 
   opts.addBoolOption("fitCaloJets",      "Fit calojets, PF jets otherwise", kFALSE);
-  opts.addBoolOption("highThreshold",    "Use high threshold jets",         kTRUE);  
+  opts.addBoolOption("highThreshold",    "Use high threshold jets",         kFALSE);  
   opts.addBoolOption("weightedDataset",  "Use event weight instead of 1",   kFALSE);
+  opts.addBoolOption("fitRatio",         "FitRatio directly",               kFALSE);
+  opts.addBoolOption("fitInclusive",     "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("AllFit",           "Fit all species",                 kTRUE);
   opts.addBoolOption("ZOnlyFit",         "Fit Z species only",              kFALSE);
   opts.addBoolOption("bkgOnlyFit",       "Fit bkg species only",            kFALSE);
-  opts.addRealOption("njetmin",          "Smallest jet number to consider", 4);
+  opts.addRealOption("njetmin",          "Smallest jet number to consider", 1);
   opts.addRealOption("njetmax",          "Largest jet number to consider",  4);
   
   return opts;
@@ -62,7 +64,15 @@ void myFit() {
     theFit.addSpecies("myFit", speclabel, specdesc);
   }
   
-  theFit.fitInclusive(speclist,"Zincl",4);  // chiara: da cambiare per fare le pdf     
+  if(opts.getBoolVal("fitRatio")) {
+    cout << "===> FITTING BERENDS-GIELE SCALING <===" << endl;
+    theFit.fitInclusiveRatio(speclist, "Zincl", opts.getRealVal("njetmin"));
+  } else if(opts.getBoolVal("fitInclusive")) {
+    cout << "===> FITTING INCLUSIVE Z+JETS MULTIPLICITIES <===" << endl;
+    theFit.fitInclusive(speclist,"Zincl",opts.getRealVal("njetmin")); 
+  } else {
+    cout << "===> FITTING EXCLUSIVE Z+JETS MULTIPLICITIES <===" << endl;
+  }
 
   char jetlabel[200];
   if(opts.getBoolVal("fitCaloJets")){ 
@@ -122,8 +132,8 @@ void FitZElectrons() {
 
   // load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/zee_0calojet_thr0.root");
-  else sprintf(datasetname,"results/datasetsJets/zee_0calojet_thr0.root");
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasets/zee.root");
+  else sprintf(datasetname,"results/datasets/zee.root");
 
   char treename[100];
   if(opts.getBoolVal("AllFit"))     sprintf(treename,"Data");
@@ -201,8 +211,8 @@ void PlotZElectrons(int njets, int ithr, int nbins) {
 
   // Load the data
   char datasetname[200];
-  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasetsJets/zee_0calojet_thr0.root");
-  else sprintf(datasetname,"results/datasetsJets/zee_0calojet_thr0.root");  
+  if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasets/zee.root");
+  else sprintf(datasetname,"results/datasets/zee.root");  
 
   char treename[100];
   if(opts.getBoolVal("AllFit"))     sprintf(treename,"Data");
