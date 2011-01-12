@@ -2,10 +2,12 @@
 MLOptions GetDefaultOptions() {
   MLOptions opts;
   // Fit configuration
+  opts.addBoolOption("fitGenJets",      "Fit genjets", kFALSE);
   opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kTRUE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
-  opts.addBoolOption("fitRatio",         "FitRatio directly", kFALSE);
+  opts.addBoolOption("fitRatio",        "FitRatio directly", kFALSE);
+  opts.addBoolOption("fitInclusive",    "Fit inclusive W+jets multiplicity", kFALSE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
@@ -40,7 +42,10 @@ void myFit() {
   RooRealVar* nbj = new RooRealVar("nBTagJets", "n_{b-tag jets}", 0.0, 3.0);
   RooRealVar* weight = new RooRealVar("weight", "weight",1);
   RooRealVar *njets;
-  if(opts.getBoolVal("fitCaloJets")) {
+  if(opts.getBoolVal("fitGenJets")) {
+    if(opts.getBoolVal("highJetThreshold")) njets = new RooRealVar("nExclGenJetsHi", "nExclGenJetsHi",0.5, 20.5);
+    else njets = new RooRealVar("nExclGenJetsLo", "nExclGenJetsLo",0.5, 20.5);
+  } else if(opts.getBoolVal("fitCaloJets")) {
     if(opts.getBoolVal("highJetThreshold")) njets = new RooRealVar("nExclJetsHi", "nExclJetsHi",0.5, 20.5);
     else njets = new RooRealVar("nExclJetsLo", "nExclJetsLo",0.5, 20.5);
   } else {
@@ -87,14 +92,20 @@ void myFit() {
   }
  
   if(opts.getBoolVal("fitRatio"))  {
+    cout << "===> FITTING BERENDS-GIELE SCALING <===" << endl;
     theFit.fitInclusiveRatio(speclist, "Wincl",opts.getRealVal("njetmin"));
-  }
-  else { 
+  } else if(opts.getBoolVal("fitInclusive")) { 
+    cout << "===> FITTING INCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
     theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmin"));
+  } else {
+    cout << "===> FITTING EXCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
   }
 
   char jetlabel[200];
-  if(opts.getBoolVal("fitCaloJets")) {
+  if(opts.getBoolVal("fitGenJets")) {
+    if(opts.getBoolVal("highJetThreshold")) sprintf(jetlabel,"nExclGenJetsHi");
+    else sprintf(jetlabel,"nExclGenJetsLo");
+  } else if(opts.getBoolVal("fitCaloJets")) {
     if(opts.getBoolVal("highJetThreshold")) sprintf(jetlabel,"nExclJetsHi");
     else sprintf(jetlabel,"nExclJetsLo");
   } else {
@@ -214,7 +225,8 @@ void FitWElectrons() {
   MLOptions opts = GetDefaultOptions();
 
   char jetflavour[200];
-  if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
+  if(opts.getBoolVal("fitGenJets")) sprintf(jetflavour, "genjet");
+  else if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
   else sprintf(jetflavour, "PFjet");
   
   int ithr;
@@ -224,7 +236,7 @@ void FitWElectrons() {
   // Load the data
   char datasetname[200];
   if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasets/data_Wenu.root");
-  else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
+  else sprintf(datasetname,"results/datasets/wenu.root");
   // only for the top control sample
   if(opts.getBoolVal("TopControlFit"))  sprintf(datasetname,"results_data_top/datasets/dataset_ll.root");
   char treename[100];
@@ -236,10 +248,17 @@ void FitWElectrons() {
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
   RooDataSet *totdata = theFit.getDataSet(treename);
    char cutstring[100];
-   if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
-                                                   opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi" , opts.getRealVal("njetmax"));
-   else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",
-                opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" , opts.getRealVal("njetmax"));
+   if(opts.getBoolVal("fitGenJets")) {
+     if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsHi",
+                                                     opts.getRealVal("njetmin") , "nExclGenJetsHi" , opts.getRealVal("njetmax"));
+     else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsLo",
+                  opts.getRealVal("njetmin") , "nExclGenJetsLo" , opts.getRealVal("njetmax"));
+   } else {
+     if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
+                                                     opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi" , opts.getRealVal("njetmax"));
+     else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",
+                  opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" , opts.getRealVal("njetmax"));
+   }
    std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
    RooDataSet *data = (RooDataSet *)totdata->reduce(cutstring);
 
@@ -319,13 +338,14 @@ void FitWElectrons() {
    MLOptions opts = GetDefaultOptions();
 
    char jetflavour[200];
-   if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
+   if(opts.getBoolVal("fitGenJets")) sprintf(jetflavour, "genjet");
+   else if(opts.getBoolVal("fitCaloJets")) sprintf(jetflavour, "calojet");
    else sprintf(jetflavour, "PFjet");
 
    // Load the data
    char datasetname[200];
    if(opts.getBoolVal("AllFit")) sprintf(datasetname,"results_data/datasets/data_Wenu.root");
-   else sprintf(datasetname,"results/datasetsJets/wenu_0jet_thr0.root");
+   else sprintf(datasetname,"results/datasets/wenu.root");
    // only for the top control sample
    if(opts.getBoolVal("TopControlFit"))  sprintf(datasetname,"results_data_top/datasets/dataset_ll.root");
    char treename[100];
@@ -337,11 +357,17 @@ void FitWElectrons() {
    theFit.addDataSetFromRootFile(treename, treename, datasetname);
    RooDataSet *data = theFit.getDataSet(treename);
    char cutstring[100];
-   if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
-                                                   njets, opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi", njets);
-   else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",
-                njets, opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo", njets);
-
+   if(opts.getBoolVal("fitGenJets")) {
+     if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsHi",
+                                                     opts.getRealVal("njetmin") , "nExclGenJetsHi" , opts.getRealVal("njetmax"));
+     else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsLo",
+                  opts.getRealVal("njetmin") , "nExclGenJetsLo" , opts.getRealVal("njetmax"));
+   } else {
+     if(opts.getBoolVal("highJetThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",
+                                                     opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi" , opts.getRealVal("njetmax"));
+     else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",
+                  opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" , opts.getRealVal("njetmax"));
+   }
    std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
    data = (RooDataSet *)data->reduce(cutstring);
 
@@ -450,7 +476,7 @@ void FitWElectrons() {
        pt1.SetTextAlign(12);
        pt1.SetFillColor(0);
        pt1.SetBorderSize(0);
-       pt1.AddText("CMS Preliminary 2010, #sqrt{s}=7 TeV, L_{int}=2.88 pb^{-1}");
+       pt1.AddText("CMS Preliminary 2010, #sqrt{s}=7 TeV, L_{int}=35 pb^{-1}");
        pt1.Draw();
      }
 
@@ -525,80 +551,34 @@ void FitWElectrons() {
    std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
 
    // plot the data
-   theData->plotOn(plot, RooFit::DataError(RooAbsData::Poisson), RooFit::Cut(cutstring));
-
- //   if(opts.getBoolVal("AllFit")) {
- //     // === plot (dashed) the other component ===
- //     MLFit theFit2;
-
- //     // define the structure of the dataset
- //     RooRealVar* PfMt = new RooRealVar("pfmt",  "M_{T}" , 0., 150., "GeV/c^{2}");
- //     //    RooRealVar *sinMHTphiJet = new RooRealVar("sinMHTphiJet","sinMHTphiJet",-0.80, 0.80);
-
- //     theFit2.AddFlatFileColumn(PfMt);
- //     //    theFit2.AddFlatFileColumn(sinMHTphiJet);
-
- //     // define a fit model
- //     theFit2.addModel("otherFit", "other Fit");
- //     theFit2.addSpecies("otherFit", "other", "other Bkg Component");
- //     theFit2.addSpecies("otherFit", "top", "top Bkg Component");
- //     if(njets==0) {
- //       theFit2.addPdfWName("otherFit", "other",   "pfmt", "Cruijff", "other_PfMt");
- //       theFit2.addPdfWName("otherFit", "top", "pfmt", "Cruijff",  "top_PfMt");
- //     } else {
- //       theFit2.addPdfWName("otherFit", "other",  "pfmt", "DoubleGaussian",  "other_PfMt");
- //       theFit2.addPdfWName("otherFit", "top", "pfmt", "DoubleCruijff", "top_PfMt");
- //     }
-
- //     RooAbsPdf *myPdf2 = theFit2.buildModel("otherFit");
- //     theFit2.initialize(configfilename);
-
- //     myPdf2->plotOn(plot, RooFit::Normalization((Nother+Ntop)/fabs(Ns+Ntop+Nother)), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::MoveToBack(), RooFit::Slice(*jets) );
- //     myPdf2->plotOn(plot, RooFit::Normalization((Nother+Ntop)/fabs(Ns+Ntop+Nother)), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );
-
- //     // === plot (dashed) the bkg component ===
- //     MLFit theFit3;
-
- //     theFit3.AddFlatFileColumn(PfMt);
- //     //    theFit3.AddFlatFileColumn(sinMHTphiJet);
-
- //     // define a fit model
- //     theFit3.addModel("topFit", "top Fit");
- //     theFit3.addSpecies("topFit", "top", "top Bkg Component");
- //     if(njets==0) {
- //       theFit3.addPdfWName("topFit", "top", "pfmt", "Cruijff",  "top_PfMt");
- //     } else {
- //       theFit3.addPdfWName("topFit", "top", "pfmt", "DoubleCruijff", "top_PfMt");
- //     }
- //     //    theFit3.addPdfWName("topFit", "top", "sinMHTphiJet",  "Cruijff",         "top_sinMHTphiJet");
-
- //     RooAbsPdf *myPdf3 = theFit3.buildModel("topFit");
- //     theFit3.initialize(configfilename);
-
- //     myPdf3->plotOn(plot, RooFit::Normalization(Ntop/fabs(Ns+Ntop+Nother)), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineWidth(2), RooFit::Slice(*jets));
- //     myPdf3->plotOn(plot, RooFit::Normalization(Ntop/fabs(Ns+Ntop+Nother)), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
-
- //   }
+   if(opts.getBoolVal("weightedDataset"))
+     theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2), RooFit::Cut(cutstring));
+   else 
+     theData->plotOn(plot, RooFit::DataError(RooAbsData::Poisson), RooFit::Cut(cutstring));
 
    // plot the total likelihood
    RooAbsPdf *thePdf = theFit->getPdf("myFit");
    thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
    thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
 
-
    //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
    //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets) );
    //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
    //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );
 
-   char speclabel[1000];
-   sprintf(speclabel,"myFit_other_%dj,myFit_top1b_%dj",njets);
-   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets) );
-   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );       
+    char speclabel[1000];
+    sprintf(speclabel,"myFit_other_%dj,myFit_top0b_%dj,myFit_top1b_%dj,myFit_top2b_%dj",njets,njets,njets,njets);
+    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets) );
+    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );       
 
-   sprintf(speclabel,"myFit_top1b_%dj",njets);
-   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets));
-   thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
+    sprintf(speclabel,"myFit_top0b_%dj,myFit_top1b_%dj,myFit_top2b_%dj",njets,njets,njets);
+    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets));
+    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
+
+   if(opts.getBoolVal("weightedDataset"))
+     theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2), RooFit::Cut(cutstring));
+   else 
+     theData->plotOn(plot, RooFit::DataError(RooAbsData::Poisson), RooFit::Cut(cutstring));
 
   return plot;
 }
