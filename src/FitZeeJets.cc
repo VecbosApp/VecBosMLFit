@@ -4,7 +4,7 @@ MLOptions GetDefaultOptions() {
   MLOptions opts;
 
   opts.addBoolOption("fitCaloJets",      "Fit calojets, PF jets otherwise", kFALSE);
-  opts.addBoolOption("highThreshold",    "Use high threshold jets",         kFALSE);  
+  opts.addBoolOption("highThreshold",    "Use high threshold jets",         kTRUE);  
   opts.addBoolOption("weightedDataset",  "Use event weight instead of 1",   kFALSE);
   opts.addBoolOption("fitRatio",         "FitRatio directly",               kFALSE);
   opts.addBoolOption("fitInclusive",     "Fit inclusive W+jets multiplicity", kTRUE);
@@ -29,7 +29,7 @@ void myFit() {
   MLOptions opts = GetDefaultOptions();
 
   // define the structure of the dataset
-  RooRealVar* mass   = new RooRealVar("mee",    "Mass [GeV/c^{2}]" , 60., 110.);
+  RooRealVar* mass   = new RooRealVar("mee",    "Mass [GeV/c^{2}]" , 60., 120.);
   RooRealVar* weight = new RooRealVar("weight", "weight",1);
   RooRealVar* njets;
   if(opts.getBoolVal("fitCaloJets")){ 
