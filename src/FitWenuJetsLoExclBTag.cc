@@ -6,7 +6,8 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kFALSE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
-  opts.addBoolOption("fitRatio",         "FitRatio directly", kFALSE);
+  opts.addBoolOption("fitRatio",        "FitRatio directly", kFALSE);
+  opts.addBoolOption("fitInclusive",    "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
@@ -96,12 +97,15 @@ void myFit() {
     theFit.addSpecies("myFit", speclabel, specdesc);
 
   }
- 
+
   if(opts.getBoolVal("fitRatio"))  {
+    cout << "===> FITTING BERENDS-GIELE SCALING <===" << endl;
     theFit.fitInclusiveRatio(speclist, "Wincl",opts.getRealVal("njetmin"));
-  }
-  else { 
+  } else if(opts.getBoolVal("fitInclusive")) { 
+    cout << "===> FITTING INCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
     theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmin"));
+  } else {
+    cout << "===> FITTING EXCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
   }
 
   char jetlabel[200];
@@ -591,6 +595,8 @@ void FitWElectrons() {
    }
    jets->setVal(njets);
 
+   RooCategory *HiJetCat = theFit->CatObservable("HiJetsClass");
+
    double min=Var->getMin();
    double max=Var->getMax();
    RooPlot *plot = Var->frame(min,max,nbins);
@@ -610,9 +616,13 @@ void FitWElectrons() {
 
    // plot the total likelihood
    RooAbsPdf *thePdf = theFit->getPdf("myFit");
-   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
-   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
-
+   if(TString(Var->GetName()).Contains("nBTagJets")) {
+     thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets), RooFit::ProjWData(*HiJetCat,*theData) );
+     thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets), RooFit::ProjWData(*HiJetCat,*theData) );
+   } else {
+     thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::LineColor(kOrange+4), RooFit::FillColor(kOrange), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
+     thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+7), RooFit::LineWidth(2), RooFit::Slice(*jets) );
+   }
    //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
    //   thePdf->plotOn(plot, RooFit::DrawOption("L"), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets) );
    //   thePdf->plotOn(plot, RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::LineWidth(2), RooFit::MoveToBack(), RooFit::Slice(*jets) );
@@ -620,12 +630,22 @@ void FitWElectrons() {
 
     char speclabel[1000];
     sprintf(speclabel,"myFit_other_%dj,myFit_top0b_%dj,myFit_top1b_%dj,myFit_top2b_%dj",njets,njets,njets,njets);
-    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets) );
-    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );       
+    if(TString(Var->GetName()).Contains("nBTagJets")) {
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets), RooFit::ProjWData(*HiJetCat,*theData), RooFit::Slice(*HiJetCat) );
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets), RooFit::ProjWData(*HiJetCat,*theData), RooFit::Slice(*HiJetCat) );       
+    } else {
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kViolet), RooFit::Slice(*jets) );
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kViolet+3), RooFit::LineWidth(2), RooFit::Slice(*jets) );             
+    }
 
     sprintf(speclabel,"myFit_top0b_%dj,myFit_top1b_%dj,myFit_top2b_%dj",njets,njets,njets);
-    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets));
-    thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
+    if(TString(Var->GetName()).Contains("nBTagJets")) {
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets), RooFit::ProjWData(*HiJetCat,*theData), RooFit::Slice(*HiJetCat) );
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets), RooFit::ProjWData(*HiJetCat,*theData), RooFit::Slice(*HiJetCat) );
+    } else {
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::DrawOption("F"), RooFit::FillColor(kOrange+8), RooFit::Slice(*jets));
+      thePdf->plotOn(plot, RooFit::Components(speclabel), RooFit::LineColor(kOrange+4), RooFit::LineWidth(2), RooFit::Slice(*jets));
+    }
 
    if(opts.getBoolVal("weightedDataset"))
      theData->plotOn(plot, RooFit::DataError(RooAbsData::SumW2), RooFit::Cut(cutstring));
