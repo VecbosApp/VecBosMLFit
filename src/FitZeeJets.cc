@@ -6,7 +6,7 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("fitCaloJets",      "Fit calojets, PF jets otherwise", kFALSE);
   opts.addBoolOption("highThreshold",    "Use high threshold jets",         kTRUE);  
   opts.addBoolOption("weightedDataset",  "Use event weight instead of 1",   kFALSE);
-  opts.addBoolOption("fitRatio",         "FitRatio directly",               kFALSE);
+  opts.addBoolOption("fitRatio",         "FitRatio directly",               kTRUE);
   opts.addBoolOption("fitInclusive",     "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("AllFit",           "Fit all species",                 kTRUE);
   opts.addBoolOption("ZOnlyFit",         "Fit Z species only",              kFALSE);
@@ -97,7 +97,8 @@ void myFit() {
     // background mll
     sprintf(speclabel,"B%dj",nj);
     sprintf(pdfname,"bkg_Mass%dj",nj);   
-    theFit.addPdfWName("myFit",speclabel  , "mee",  "Poly2",   pdfname);
+    //    theFit.addPdfWName("myFit",speclabel  , "mee",  "Poly2",   pdfname);
+    theFit.addPdfWName("myFit",speclabel  , "mee",  "ModExp",   pdfname);
 
     // jet category   
     sprintf(speclabel,"Z%dj",nj);
