@@ -1,19 +1,18 @@
 // Set Fit Options
 MLOptions GetDefaultOptions() {
 
-  MLOptions opts;
-
+  MLOptions opts;                                                                   // change background?
   opts.addBoolOption("fitGenJets",       "Fit genjets", kFALSE);
   opts.addBoolOption("fitCaloJets",      "Fit calojets, PF jets otherwise", kFALSE);
-  opts.addBoolOption("highThreshold",    "Use high threshold jets",         kTRUE);  
+  opts.addBoolOption("highThreshold",    "Use high threshold jets",         kFALSE); // <- 
   opts.addBoolOption("weightedDataset",  "Use event weight instead of 1",   kFALSE);
   opts.addBoolOption("fitRatio",         "FitRatio directly",               kTRUE);
-  opts.addBoolOption("unfold",           "use unfolding step",               kFALSE);
+  opts.addBoolOption("unfold",           "use unfolding step",               kTRUE); // <-
   opts.addBoolOption("fitInclusive",     "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("AllFit",           "Fit all species",                 kTRUE);
   opts.addBoolOption("ZOnlyFit",         "Fit Z species only",              kFALSE);
   opts.addBoolOption("bkgOnlyFit",       "Fit bkg species only",            kFALSE);
-  opts.addRealOption("njetmin",          "Smallest jet number to consider", 1);
+  opts.addRealOption("njetmin",          "Smallest jet number to consider", 0); // <-
   opts.addRealOption("njetmax",          "Largest jet number to consider",  4);
   
   return opts;
@@ -70,13 +69,23 @@ void myFit() {
     theFit.addSpecies("myFit", speclabel, specdesc);
   }
 
+  
   // 30GeV PFjet, no PU, Madgraph Z2, Z->ee smearing matrix
- float unf[25]={  9.83E-001  ,  1.41E-001  ,  1.85E-002  ,  1.66E-003  ,  0.00E+000,
-                  1.65E-002  ,  8.33E-001  ,  2.34E-001  ,  4.66E-002  ,  2.40E-003,
-                  2.06E-004  ,  2.54E-002  ,  7.21E-001  ,  2.84E-001  ,  5.77E-002,
-                  2.91E-006  ,  3.96E-004  ,  2.57E-002  ,  6.38E-001  ,  3.03E-001,
-                  0.00E+000  ,  0.00E+000  ,  4.99E-004  ,  3.05E-002  ,  6.37E-001 };
-
+  if(opts.getBoolVal("highThreshold")){
+    float unf[25]={  9.83E-001  ,  1.41E-001  ,  1.85E-002  ,  1.66E-003  ,  0.00E+000,
+		     1.65E-002  ,  8.33E-001  ,  2.34E-001  ,  4.66E-002  ,  2.40E-003,
+		     2.06E-004  ,  2.54E-002  ,  7.21E-001  ,  2.84E-001  ,  5.77E-002,
+		     2.91E-006  ,  3.96E-004  ,  2.57E-002  ,  6.38E-001  ,  3.03E-001,
+		     0.00E+000  ,  0.00E+000  ,  4.99E-004  ,  3.05E-002  ,  6.37E-001 };
+  }
+  else{
+    float unf[25]={  9.54E-001, 1.69E-001, 3.23E-002, 6.67E-003, 5.92E-004,  
+		     4.43E-002, 7.78E-001, 2.75E-001, 7.61E-002, 1.24E-002,  
+		     1.46E-003, 5.07E-002, 6.39E-001, 3.30E-001, 9.38E-002,	 
+		     3.37E-005, 2.06E-003, 5.16E-002, 5.34E-001, 2.92E-001,  
+		     3.74E-006, 9.42E-005, 2.43E-003, 5.34E-002, 6.01E-001 };
+  }
+  
 
   //  for testing
 //    float unf[25]={1,0,0,0,0,
@@ -121,16 +130,16 @@ void myFit() {
   char speclabel[50],pdfname[200],specfirst[50];
   bool first=true;
   bool second = false;
-   for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++){
-
+  for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++){
+    
     // signal mll 
     sprintf(speclabel,"Z%dj",nj);
-    if(second){
+    if(second || (first && nj==1)){
       theFit.addPdfWName("myFit", speclabel , "mee",  "Cruijff", "sig_Mass");
       first = false;
       strcpy(specfirst,speclabel);
     }
-    if(first){
+    if(first && nj==0){
       theFit.addPdfWName("myFit", speclabel , "mee",  "Cruijff", "sig_Mass0j");
       first = false;
       second = true;
@@ -142,7 +151,7 @@ void myFit() {
     // background mll
     sprintf(speclabel,"B%dj",nj);
     sprintf(pdfname,"bkg_Mass%dj",nj);   
-    theFit.addPdfWName("myFit",speclabel  , "mee",  "Poly2",   pdfname);
+    theFit.addPdfWName("myFit",speclabel  , "mee",  "Expo",   pdfname);
 
     // jet category   
     sprintf(speclabel,"Z%dj",nj);
@@ -278,6 +287,10 @@ void PlotZElectrons(int njets, int ithr, int nbins) {
   if(opts.getBoolVal("ZOnlyFit"))   sprintf(treename,"ZJets");
   if(opts.getBoolVal("bkgOnlyFit")) sprintf(treename,"BkgJets");  
 
+  int ithr;
+  if(opts.getBoolVal("highThreshold")) ithr=0;
+  else ithr=1;
+
   char cutstring[100];
   theFit.addDataSetFromRootFile(treename, treename, datasetname);
 
@@ -287,13 +300,11 @@ void PlotZElectrons(int njets, int ithr, int nbins) {
 //   if(opts.getBoolVal("highThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",njets, opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi", njets);
 //   else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",njets, opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo", njets);
   if(opts.getBoolVal("fitGenJets")) {
-    if(opts.getBoolVal("highThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsHi",
-                                                    opts.getRealVal("njetmin") , "nExclGenJetsHi" , opts.getRealVal("njetmax"));
-    else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsLo",
-                 opts.getRealVal("njetmin") , "nExclGenJetsLo" , opts.getRealVal("njetmax"));
+    if(opts.getBoolVal("highThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsHi",opts.getRealVal("njetmin") , "nExclGenJetsHi" , opts.getRealVal("njetmax"));
+    else                                 sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )","nExclGenJetsLo",opts.getRealVal("njetmin") , "nExclGenJetsLo" , opts.getRealVal("njetmax"));
   } else {
     if(opts.getBoolVal("highThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",opts.getRealVal("njetmin"), opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi", opts.getRealVal("njetmax"));
-    else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",opts.getRealVal("njetmin"), opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo", opts.getRealVal("njetmax"));
+    else                                 sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",opts.getRealVal("njetmin"), opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo", opts.getRealVal("njetmax"));
   }
   std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
   data = (RooDataSet *)data->reduce(cutstring);
@@ -386,7 +397,7 @@ RooPlot *MakePlot(TString VarName, int njets, MLFit* theFit, RooDataSet* theData
 //   if(opts.getBoolVal("highThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi" , opts.getRealVal("njetmax"));
 //   else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",opts.getRealVal("njetmin") ,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" , opts.getRealVal("njetmax"));
   if(opts.getBoolVal("highThreshold")) sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsHi":"nExclPFJetsHi",njets,opts.getBoolVal("fitCaloJets")?"nExclJetsHi":"nExclPFJetsHi" , njets);
-  else sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",njets ,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" ,njets);
+  else                                 sprintf(cutstring,"(%s > (%d-0.5) )&& (%s < (%d + 0.5) )",opts.getBoolVal("fitCaloJets")?"nExlcJetsLo":"nExclPFJetsLo",njets,opts.getBoolVal("fitCaloJets")?"nExclJetsLo":"nExclPFJetsLo" ,njets);
   std::cout << "===> Reducing data with cut: " << cutstring << " <===" << std::endl;
   
   // plot the data
