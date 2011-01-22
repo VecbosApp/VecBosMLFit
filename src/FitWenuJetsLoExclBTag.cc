@@ -7,6 +7,7 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kFALSE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
   opts.addBoolOption("fitRatio",        "FitRatio directly", kFALSE);
+  opts.addBoolOption("unfold",          "use unfolding step",               kFALSE);
   opts.addBoolOption("fitInclusive",    "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
@@ -15,7 +16,7 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("TopOnlyFit",      "Fit Top species only",   kFALSE);
   opts.addBoolOption("OtherOnlyFit",    "Fit other species only", kFALSE);
   opts.addBoolOption("TopControlFit",   "Fit the top cntrol sample", kFALSE);
-  opts.addRealOption("njetmin",         "smallest jet number to consider", 1);
+  opts.addRealOption("njetmin",         "smallest jet number to consider", 0);
   opts.addRealOption("njetmax",         "largest jet number to consider", 4);
   opts.addRealOption("nb",              "number of MC truth b's in the event (-1 means no requirement)", -1);
   opts.addBoolOption("barrelOnly",      "barrel only", kFALSE);
@@ -70,13 +71,19 @@ void myFit() {
 
   // define species
   MLStrList speclist;
+  TString firstlabel("");
   for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++){
     //signal (assumption is W is all 0 bjets in the acceptance)
     char speclabel[50], specdesc[200];
     sprintf(speclabel,"W_%dj",nj);
     sprintf(specdesc,"Signal %dj Component",nj);
     theFit.addSpecies("myFit", speclabel, specdesc);
-    speclist.Add(speclabel); // exclusive species list ot be transformed in inclusive.
+    if(opts.getBoolVal("unfold")) {
+      if(nj!=0) speclist.Add(speclabel); // exclusive species list ot be transformed in inclusive.
+      else firstlabel = speclabel;
+    } else {
+      speclist.Add(speclabel);
+    }
 
     // top (ttbar + single t)
     sprintf(speclabel,"top0b_%dj",nj); // 0 bjet
@@ -98,9 +105,24 @@ void myFit() {
 
   }
 
+  // 15GeV PFjet, no PU, Madgraph Z2, W->enu smearing matrix
+  float unf[25] = { 0.956862,       0.187281,       0.0366274,      0.00704445,     0.000780292,
+                    0.0417346,      0.762501,       0.282917,       0.0821474,      0.0195073,
+                    0.00135677,     0.0480632,      0.628694,       0.339128,       0.126965,
+                    4.55885e-05,    0.00207593,     0.0494481,      0.520153,       0.383123,
+                    6.80425e-07,    7.86338e-05,    0.00231402,     0.0515268,      0.469624 };
+
+  TMatrix foldingmatrix(5,5,unf);
+
   if(opts.getBoolVal("fitRatio"))  {
     cout << "===> FITTING BERENDS-GIELE SCALING <===" << endl;
-    theFit.fitInclusiveRatio(speclist, "Wincl",opts.getRealVal("njetmin"));
+    if(opts.getBoolVal("unfold")) {
+      cout << "===> FITTING AT GEN LEVEL <===" << endl;
+      theFit.fitInclusiveRatioPolyUnfold(speclist, "Wincl", foldingmatrix , firstlabel);
+    } else {
+      cout << "===> FITTING AT DET LEVEL <===" << endl;
+      theFit.fitInclusiveRatioPoly(speclist, "Wincl", opts.getRealVal("njetmin"));
+    }
   } else if(opts.getBoolVal("fitInclusive")) { 
     cout << "===> FITTING INCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
     theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmin"));
@@ -152,7 +174,7 @@ void myFit() {
 
     // b-tagged jet multiplicity
     char effb0[50], effnob0[50], effb1[50], effnob1[50], effb2[50], effnob2[50];
-    char njetsstr[50], nbstr[50];
+    char njetsstr[50], nb0str[50], nb1str[50], nb2str[50];
     char njetsstrb0[50], njetsstrb1[50], njetsstrb2[50], nbstrb0[50], nbstrb1[50], nbstrb2[50];
     if(opts.getBoolVal("useBTag")) {
 
@@ -220,7 +242,9 @@ void myFit() {
       }
 
       sprintf(njetsstr,"b0_btag_%dj_njets",nj);
-      sprintf(nbstr,"b0_btag_%dj_nb",nj);
+      sprintf(nb0str,"b0_btag_%dj_nb",nj);
+      sprintf(nb1str,"b1_btag_%dj_nb",nj);
+      sprintf(nb2str,"b2_btag_%dj_nb",nj);
 
       // tagging and mistag rate are jet properties: unique over jet multiplicities
       for(int njHi=0; njHi<=opts.getRealVal("njetmax"); njHi++) {
@@ -243,7 +267,9 @@ void myFit() {
         sprintf(nbstrb2,"b2_btag_%dj_HiJets%d_nb",nj,njHi);
         
         theFit.bind(MLStrList(njetsstrb0,njetsstrb1,njetsstrb2),njetsstr,njetsstr);
-        theFit.bind(MLStrList(nbstrb0,nbstrb1,nbstrb2),nbstr,nbstr);
+        theFit.bind(MLStrList(nbstrb0),nb0str,nb0str);
+        theFit.bind(MLStrList(nbstrb1),nb1str,nb1str);
+        theFit.bind(MLStrList(nbstrb2),nb2str,nb2str);
       }
 
     }
