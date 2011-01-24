@@ -6,8 +6,10 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kTRUE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
-  opts.addBoolOption("fitRatio",        "FitRatio directly", kFALSE);
-  opts.addBoolOption("fitInclusive",    "Fit inclusive W+jets multiplicity", kFALSE);
+  opts.addBoolOption("fitRatio",        "FitRatio directly", kTRUE);
+  opts.addBoolOption("unfold",          "use unfolding step",               kTRUE);
+  opts.addBoolOption("effcorr",         "use njets efficiency corrections", kTRUE);
+  opts.addBoolOption("fitInclusive",    "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
   opts.addBoolOption("AllFit",          "Fit all species",        kTRUE);
@@ -15,7 +17,7 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("TopOnlyFit",      "Fit Top species only",   kFALSE);
   opts.addBoolOption("OtherOnlyFit",    "Fit other species only", kFALSE);
   opts.addBoolOption("TopControlFit",   "Fit the top cntrol sample", kFALSE);
-  opts.addRealOption("njetmin",         "smallest jet number to consider", 1);
+  opts.addRealOption("njetmin",         "smallest jet number to consider", 0);
   opts.addRealOption("njetmax",         "largest jet number to consider", 4);
   opts.addRealOption("nb",              "number of MC truth b's in the event (-1 means no requirement)", -1);
   opts.addBoolOption("barrelOnly",      "barrel only", kFALSE);
@@ -63,13 +65,19 @@ void myFit() {
 
   // define species
   MLStrList speclist;
+  TString firstlabel("");
   for(int nj = opts.getRealVal("njetmin"); nj <=opts.getRealVal("njetmax"); nj++){
     //signal (assumption is W is all 0 bjets in the acceptance)
     char speclabel[50], specdesc[200];
     sprintf(speclabel,"W_%dj",nj);
     sprintf(specdesc,"Signal %dj Component",nj);
     theFit.addSpecies("myFit", speclabel, specdesc);
-    speclist.Add(speclabel); // exclusive species list ot be transformed in inclusive.
+    if(opts.getBoolVal("unfold")) { 
+      if(nj!=0) speclist.Add(speclabel); // exclusive species list ot be transformed in inclusive.
+      else firstlabel = speclabel;
+    } else {
+      speclist.Add(speclabel);
+    }
 
     // top (ttbar + single t)
     sprintf(speclabel,"top0b_%dj",nj); // 0 bjet
@@ -90,10 +98,30 @@ void myFit() {
     theFit.addSpecies("myFit", speclabel, specdesc);
 
   }
- 
+
+  // 30GeV PFjet, no PU, Madgraph Z2, W->enu smearing matrix
+  float unf[25] = { 0.984035,       0.0862901,      0.00550043,     0.000332631,    0,
+                    0.0157636,      0.884884,       0.119709,       0.0127509,      0,
+                    0.000199209,    0.028361,       0.842643,       0.168977,       0.0156174,
+                    2.30744e-06,    0.000464765,    0.0316275,      0.778135,       0.183992,
+                    0,      0,      0.000520311,    0.0398049,      0.80039 };
+
+  double eff[5] = { 0.718, 0.661, 0.614, 0.555, 0.485 };
+
+  TMatrix foldingmatrix(5,5,unf);
+  TArrayD efficiency(5,eff);
+
   if(opts.getBoolVal("fitRatio"))  {
     cout << "===> FITTING BERENDS-GIELE SCALING <===" << endl;
-    theFit.fitInclusiveRatio(speclist, "Wincl",opts.getRealVal("njetmin"));
+    if(opts.getBoolVal("unfold")) {
+      cout << "===> FITTING AT GEN LEVEL <===" << endl;
+      if(opts.getBoolVal("effcorr")) theFit.fitInclusiveRatioPolyUnfold(speclist, "Wincl", foldingmatrix , firstlabel, efficiency);
+      else theFit.fitInclusiveRatioPolyUnfold(speclist, "Wincl", foldingmatrix , firstlabel);
+    } else {
+      cout << "===> FITTING AT DET LEVEL <===" << endl;
+      if(opts.getBoolVal("effcorr")) theFit.fitInclusiveRatioPoly(speclist, "Wincl", opts.getRealVal("njetmin"), efficiency);
+      else theFit.fitInclusiveRatioPoly(speclist, "Wincl", opts.getRealVal("njetmin"));
+    }
   } else if(opts.getBoolVal("fitInclusive")) { 
     cout << "===> FITTING INCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
     theFit.fitInclusive( speclist, "Wincl_",opts.getRealVal("njetmin"));

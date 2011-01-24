@@ -6,8 +6,9 @@ MLOptions GetDefaultOptions() {
   opts.addBoolOption("fitCaloJets",     "Fit calojets, PFjets otherwise", kFALSE);
   opts.addBoolOption("highJetThreshold", "Fit W+jets with ET>30 GeV", kFALSE);
   opts.addBoolOption("weightedDataset", "use event weight instead of 1",     kFALSE);
-  opts.addBoolOption("fitRatio",        "FitRatio directly", kFALSE);
-  opts.addBoolOption("unfold",          "use unfolding step",               kFALSE);
+  opts.addBoolOption("fitRatio",        "FitRatio directly", kTRUE);
+  opts.addBoolOption("unfold",          "use unfolding step",               kTRUE);
+  opts.addBoolOption("effcorr",         "use njets efficiency corrections", kTRUE);
   opts.addBoolOption("fitInclusive",    "Fit inclusive W+jets multiplicity", kTRUE);
   opts.addBoolOption("usePfMt",         "Use W Transverse Mass",  kTRUE);
   opts.addBoolOption("useBTag",         "Use B Tag",  kTRUE);
@@ -106,22 +107,27 @@ void myFit() {
   }
 
   // 15GeV PFjet, no PU, Madgraph Z2, W->enu smearing matrix
-  float unf[25] = { 0.956862,       0.187281,       0.0366274,      0.00704445,     0.000780292,
-                    0.0417346,      0.762501,       0.282917,       0.0821474,      0.0195073,
-                    0.00135677,     0.0480632,      0.628694,       0.339128,       0.126965,
-                    4.55885e-05,    0.00207593,     0.0494481,      0.520153,       0.383123,
-                    6.80425e-07,    7.86338e-05,    0.00231402,     0.0515268,      0.469624 };
+  float unf[25] = { 0.953752,       0.103246,       0.0115749,      0.00105953,     6.2897e-05,
+                    0.0446423,      0.835295,       0.160113,       0.0255833,      0.00194981,
+                    0.00154778,     0.0585851,      0.758414,       0.205836,       0.0276747,
+                    5.6041e-05,     0.00276085,     0.0661869,      0.68565,        0.187622,
+                    1.42477e-06,    0.000112922,    0.00371216,     0.081871,       0.782691 };
+
+  double eff[5] = { 0.721, 0.697, 0.664, 0.630, 0.581 };
 
   TMatrix foldingmatrix(5,5,unf);
+  TArrayD efficiency(5,eff);
 
   if(opts.getBoolVal("fitRatio"))  {
     cout << "===> FITTING BERENDS-GIELE SCALING <===" << endl;
     if(opts.getBoolVal("unfold")) {
       cout << "===> FITTING AT GEN LEVEL <===" << endl;
-      theFit.fitInclusiveRatioPolyUnfold(speclist, "Wincl", foldingmatrix , firstlabel);
+      if(opts.getBoolVal("effcorr")) theFit.fitInclusiveRatioPolyUnfold(speclist, "Wincl", foldingmatrix , firstlabel, efficiency);
+      else theFit.fitInclusiveRatioPolyUnfold(speclist, "Wincl", foldingmatrix , firstlabel);
     } else {
       cout << "===> FITTING AT DET LEVEL <===" << endl;
-      theFit.fitInclusiveRatioPoly(speclist, "Wincl", opts.getRealVal("njetmin"));
+      if(opts.getBoolVal("effcorr")) theFit.fitInclusiveRatioPoly(speclist, "Wincl", opts.getRealVal("njetmin"), efficiency); 
+      else theFit.fitInclusiveRatioPoly(speclist, "Wincl", opts.getRealVal("njetmin"));
     }
   } else if(opts.getBoolVal("fitInclusive")) { 
     cout << "===> FITTING INCLUSIVE W+JETS MULTIPLICITIES <===" << endl;
